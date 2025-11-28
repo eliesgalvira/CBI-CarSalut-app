@@ -140,7 +140,7 @@ export function BatteryIndicator({
             fill="none"
           />
           
-          {/* Progress ring */}
+          {/* Progress ring - clockwise from top */}
           <AnimatedCircle
             cx={center}
             cy={center}
@@ -153,6 +153,7 @@ export function BatteryIndicator({
             strokeLinecap="round"
             rotation="-90"
             origin={`${center}, ${center}`}
+            transform={`scale(-1, 1) translate(-${size}, 0)`}
           />
         </Svg>
         
