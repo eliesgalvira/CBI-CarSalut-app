@@ -151,9 +151,9 @@ export function BatteryIndicator({
             strokeDasharray={circumference}
             animatedProps={animatedCircleProps}
             strokeLinecap="round"
-            rotation="-90"
+            rotation="90"
             origin={`${center}, ${center}`}
-            transform={`scale(-1, 1) translate(-${size}, 0)`}
+            scaleX={-1}
           />
         </Svg>
         
