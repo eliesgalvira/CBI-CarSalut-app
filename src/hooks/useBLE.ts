@@ -20,10 +20,44 @@ const TARGET_DEVICE_NAME = 'CarTag';
 const RECONNECT_DELAY = 3000;
 const MAX_RECONNECT_ATTEMPTS = 5;
 const SCAN_TIMEOUT = 15000; // 15 seconds scan timeout
+const MAX_SCAN_RETRIES = 3; // Maximum scan retry attempts
 
 // UUIDs matching the ESP32 firmware
 const SERVICE_UUID = '4fafc201-1fb5-459e-8fcc-c5c9c331914b';
 const CHARACTERISTIC_UUID = 'beb5483e-36e1-4688-b7f5-ea07361b26a8';
+
+/**
+ * Deferred pattern - converts event-driven APIs to Promise-based.
+ * Useful for single-shot async operations where you need to resolve/reject
+ * from outside the Promise executor.
+ */
+class Deferred<T, E = Error> {
+  promise: Promise<T>;
+  resolve!: (value: T) => void;
+  reject!: (error: E) => void;
+  private settled = false;
+
+  constructor() {
+    this.promise = new Promise<T>((resolve, reject) => {
+      this.resolve = (value: T) => {
+        if (!this.settled) {
+          this.settled = true;
+          resolve(value);
+        }
+      };
+      this.reject = (error: E) => {
+        if (!this.settled) {
+          this.settled = true;
+          reject(error);
+        }
+      };
+    });
+  }
+
+  get isSettled() {
+    return this.settled;
+  }
+}
 
 const initialState: BLEState = {
   status: 'idle',
@@ -45,6 +79,8 @@ export function useBLE() {
   const disconnectListenerRef = useRef<{ remove: () => void } | null>(null);
   const isDisconnectingRef = useRef(false);
   const scanTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scanRetryCountRef = useRef(0);
+  const isScanningRef = useRef(false); // Track if we're in a scan operation
 
   // Initialize BLE Manager
   useEffect(() => {
@@ -441,15 +477,24 @@ export function useBLE() {
       return;
     }
 
+    // Prevent multiple concurrent scan operations
+    if (isScanningRef.current) {
+      console.log('[BLE] Scan already in progress, ignoring');
+      return;
+    }
+
     // Reset flags
     console.log('[BLE] Resetting flags - isDisconnecting was:', isDisconnectingRef.current);
     isDisconnectingRef.current = false;
     isReconnectingRef.current = false;
     reconnectAttemptsRef.current = 0;
+    scanRetryCountRef.current = 0;
+    isScanningRef.current = true;
 
     const hasPermissions = await requestPermissions();
     if (!hasPermissions) {
       console.log('[BLE] Permissions not granted');
+      isScanningRef.current = false;
       return;
     }
 
@@ -461,6 +506,7 @@ export function useBLE() {
         ...prev,
         error: 'Please turn on Bluetooth',
       }));
+      isScanningRef.current = false;
       return;
     }
 
@@ -470,16 +516,109 @@ export function useBLE() {
       scanTimeoutRef.current = null;
     }
 
-    // Stop any existing scan before starting a new one
-    try {
-      console.log('[BLE] Stopping any existing scan');
-      manager.stopDeviceScan();
-    } catch (e) {
-      console.log('[BLE] Stop scan error (ignored):', e);
-    }
+    // Helper function to attempt starting a scan with retries
+    // Uses Deferred pattern to convert event-driven scan to Promise-based
+    const attemptScan = async (): Promise<boolean> => {
+      // Stop any existing scan before starting a new one
+      // In v3.x, stopDeviceScan() returns a Promise - await it to ensure scan is fully stopped
+      try {
+        console.log('[BLE] Stopping any existing scan (awaiting Promise)...');
+        await manager.stopDeviceScan();
+        console.log('[BLE] Previous scan stopped successfully');
+      } catch (e) {
+        console.log('[BLE] Stop scan error (ignored):', e);
+      }
 
-    // Small delay to let BLE stack settle after stopping previous scan
-    await new Promise(resolve => setTimeout(resolve, 200));
+      // Small additional delay for the native BLE stack to fully release resources
+      // This is a safety margin - the await above should handle most cases
+      const extraDelay = scanRetryCountRef.current * 200; // 0ms first try, 200ms, 400ms, 600ms
+      if (extraDelay > 0) {
+        console.log(`[BLE] Extra delay ${extraDelay}ms for retry...`);
+        await new Promise(resolve => setTimeout(resolve, extraDelay));
+      }
+
+      // Use Deferred pattern: the scan callback will resolve/reject this
+      const scanStarted = new Deferred<boolean, Error>();
+
+      console.log('[BLE] Starting device scan (attempt', scanRetryCountRef.current + 1, ')');
+      
+      try {
+        manager.startDeviceScan(
+          null, // No UUID filter - scan all devices
+          { 
+            allowDuplicates: false,
+            scanMode: ScanMode.LowLatency,
+          }, 
+          async (error, device) => {
+            if (error) {
+              console.error('[BLE] Scan error:', error.message);
+              
+              // Check if we should retry (only on first error, Deferred handles idempotency)
+              if (!scanStarted.isSettled && scanRetryCountRef.current < MAX_SCAN_RETRIES) {
+                scanRetryCountRef.current++;
+                console.log(`[BLE] Retrying scan (attempt ${scanRetryCountRef.current + 1}/${MAX_SCAN_RETRIES + 1})`);
+                
+                // Stop the failed scan
+                try {
+                  await manager.stopDeviceScan();
+                } catch (e) {
+                  // Ignore
+                }
+                
+                // Retry and resolve with that result
+                const success = await attemptScan();
+                scanStarted.resolve(success);
+              } else if (!scanStarted.isSettled) {
+                // Max retries reached, give up
+                console.error('[BLE] Max scan retries reached');
+                isScanningRef.current = false;
+                setState((prev) => ({
+                  ...prev,
+                  status: 'idle',
+                  error: 'Cannot start scanning. Please try again.',
+                }));
+                scanStarted.resolve(false);
+              }
+              return;
+            }
+
+            // Scan is working - resolve true on first successful callback
+            scanStarted.resolve(true);
+
+            // Log devices we find (only ones with names to reduce noise)
+            if (device?.name) {
+              console.log('[BLE] Found device:', device.name, device.id);
+            }
+
+            // Check device name
+            if (device?.name?.includes(TARGET_DEVICE_NAME)) {
+              console.log('[BLE] Found target device:', device.name);
+              if (scanTimeoutRef.current) {
+                clearTimeout(scanTimeoutRef.current);
+                scanTimeoutRef.current = null;
+              }
+              manager.stopDeviceScan();
+              isScanningRef.current = false;
+              await connectToDevice(device);
+            }
+          }
+        );
+        
+        // Give the scan a moment to either error or start successfully
+        // If we don't get a callback within 500ms, assume it started
+        setTimeout(() => {
+          if (!scanStarted.isSettled) {
+            console.log('[BLE] Scan started (no immediate callback)');
+            scanStarted.resolve(true);
+          }
+        }, 500);
+      } catch (e) {
+        console.error('[BLE] startDeviceScan threw:', e);
+        scanStarted.resolve(false);
+      }
+
+      return scanStarted.promise;
+    };
 
     setState((prev) => ({
       ...prev,
@@ -487,49 +626,18 @@ export function useBLE() {
       error: null,
     }));
 
-    console.log('[BLE] Starting device scan (no UUID filter, using device name)');
+    // Start the scan with retry logic
+    const scanStarted = await attemptScan();
     
-    // Don't filter by UUID - some ESP32s don't advertise service UUIDs properly
-    // Instead, scan for all devices and filter by name
-    manager.startDeviceScan(
-      null, // No UUID filter - scan all devices
-      { 
-        allowDuplicates: false,
-        scanMode: ScanMode.LowLatency,
-      }, 
-      async (error, device) => {
-        if (error) {
-          console.error('[BLE] Scan error:', error.message);
-          setState((prev) => ({
-            ...prev,
-            status: 'idle',
-            error: error.message,
-          }));
-          return;
-        }
-
-        // Log devices we find (only ones with names to reduce noise)
-        if (device?.name) {
-          console.log('[BLE] Found device:', device.name, device.id);
-        }
-
-        // Check device name
-        if (device?.name?.includes(TARGET_DEVICE_NAME)) {
-          console.log('[BLE] Found target device:', device.name);
-          if (scanTimeoutRef.current) {
-            clearTimeout(scanTimeoutRef.current);
-            scanTimeoutRef.current = null;
-          }
-          manager.stopDeviceScan();
-          await connectToDevice(device);
-        }
-      }
-    );
+    if (!scanStarted) {
+      return;
+    }
 
     // Stop scanning after timeout
     scanTimeoutRef.current = setTimeout(() => {
       console.log('[BLE] Scan timeout reached');
       manager.stopDeviceScan();
+      isScanningRef.current = false;
       setState((prev) => {
         if (prev.status === 'scanning') {
           return {
@@ -544,13 +652,18 @@ export function useBLE() {
   }, [requestPermissions, connectToDevice]);
 
   // Stop scanning
-  const stopScan = useCallback(() => {
+  const stopScan = useCallback(async () => {
     console.log('[BLE] stopScan called');
     if (scanTimeoutRef.current) {
       clearTimeout(scanTimeoutRef.current);
       scanTimeoutRef.current = null;
     }
-    managerRef.current?.stopDeviceScan();
+    isScanningRef.current = false;
+    try {
+      await managerRef.current?.stopDeviceScan();
+    } catch (e) {
+      console.log('[BLE] Stop scan error (ignored):', e);
+    }
     setState((prev) => ({
       ...prev,
       status: 'idle',
@@ -564,6 +677,7 @@ export function useBLE() {
     // Set flag to prevent reconnection attempts
     isDisconnectingRef.current = true;
     reconnectAttemptsRef.current = MAX_RECONNECT_ATTEMPTS;
+    isScanningRef.current = false;
     
     // Clear any scan timeout
     if (scanTimeoutRef.current) {
@@ -571,9 +685,9 @@ export function useBLE() {
       scanTimeoutRef.current = null;
     }
     
-    // Stop any ongoing scan
+    // Stop any ongoing scan (await the Promise in v3.x)
     try {
-      managerRef.current?.stopDeviceScan();
+      await managerRef.current?.stopDeviceScan();
     } catch (e) {
       console.log('[BLE] Stop scan during disconnect error (ignored):', e);
     }
