@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import Animated, {
@@ -8,16 +8,31 @@ import Animated, {
   Easing,
   useDerivedValue,
   runOnJS,
-  SharedValue,
 } from 'react-native-reanimated';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 interface BatteryIndicatorProps {
-  percentage: number;
+  percentage: number | null;
   size?: number;
   strokeWidth?: number;
 }
+
+// Get color based on percentage with new thresholds:
+// 100%-21%: Green (normal)
+// 20%-15%: Amber (warning)
+// Below 15%: Red (critical)
+const getColor = (pct: number) => {
+  if (pct > 20) return '#22C55E'; // Green
+  if (pct >= 15) return '#F59E0B'; // Amber
+  return '#EF4444'; // Red
+};
+
+const getStatusText = (pct: number) => {
+  if (pct > 20) return null; // No status text for normal
+  if (pct >= 15) return 'Low Battery';
+  return 'Replace Battery';
+};
 
 export function BatteryIndicator({
   percentage,
@@ -28,23 +43,28 @@ export function BatteryIndicator({
   const circumference = 2 * Math.PI * radius;
   const center = size / 2;
 
-  // Animated values
-  const animatedPercentage = useSharedValue(percentage);
-  const displayPercentage = useSharedValue(percentage);
+  // State for displaying the animated percentage text
+  const [displayValue, setDisplayValue] = useState<number>(percentage ?? 0);
+
+  // Animated values - initialize with percentage or 0
+  const animatedPercentage = useSharedValue(percentage ?? 0);
 
   // Update animation when percentage changes
   useEffect(() => {
-    animatedPercentage.value = withTiming(percentage, {
-      duration: 1000,
-      easing: Easing.bezier(0.25, 0.1, 0.25, 1),
-    });
-    
-    // Animate display percentage for the text
-    displayPercentage.value = withTiming(percentage, {
-      duration: 1000,
-      easing: Easing.bezier(0.25, 0.1, 0.25, 1),
-    });
-  }, [percentage]);
+    if (percentage !== null) {
+      animatedPercentage.value = withTiming(percentage, {
+        duration: 1000,
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+      });
+    }
+  }, [percentage, animatedPercentage]);
+
+  // Derived value to update display text - this runs on UI thread and calls back to JS
+  useDerivedValue(() => {
+    const rounded = Math.round(animatedPercentage.value);
+    runOnJS(setDisplayValue)(rounded);
+    return rounded;
+  });
 
   // Animated props for the progress circle
   const animatedCircleProps = useAnimatedProps(() => {
@@ -54,21 +74,44 @@ export function BatteryIndicator({
     };
   });
 
-  // Get color based on percentage
-  const getColor = (pct: number) => {
-    if (pct > 50) return '#22C55E'; // Green
-    if (pct > 20) return '#F59E0B'; // Amber
-    return '#EF4444'; // Red
-  };
+  // Show "connect for first time" message if no percentage received yet
+  if (percentage === null) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>BATTERY</Text>
+        
+        <View style={[styles.ringContainer, { width: size, height: size }]}>
+          <Svg width={size} height={size}>
+            {/* Background ring only */}
+            <Circle
+              cx={center}
+              cy={center}
+              r={radius}
+              stroke="#1E293B"
+              strokeWidth={strokeWidth}
+              fill="none"
+            />
+          </Svg>
+          
+          {/* Center text */}
+          <View style={styles.centerContent}>
+            <Text style={styles.noDataText}>—</Text>
+          </View>
+        </View>
+        
+        <View style={styles.statusContainer}>
+          <Text style={styles.connectText}>Connect to device to view battery level</Text>
+        </View>
+      </View>
+    );
+  }
 
-  // Round display percentage for rendering
-  const roundedPercentage = useDerivedValue(() => {
-    return Math.round(displayPercentage.value);
-  });
+  const color = getColor(percentage);
+  const statusText = getStatusText(percentage);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>BATTERY</Text>
+      <Text style={[styles.title, { color }]}>BATTERY</Text>
       
       <View style={[styles.ringContainer, { width: size, height: size }]}>
         <Svg width={size} height={size}>
@@ -87,7 +130,7 @@ export function BatteryIndicator({
             cx={center}
             cy={center}
             r={radius}
-            stroke={getColor(percentage)}
+            stroke={color}
             strokeWidth={strokeWidth}
             fill="none"
             strokeDasharray={circumference}
@@ -100,43 +143,22 @@ export function BatteryIndicator({
         
         {/* Center text */}
         <View style={styles.centerContent}>
-          <AnimatedPercentageText 
-            percentage={displayPercentage} 
-            color={getColor(percentage)}
-          />
+          <Text style={[styles.percentageText, { color }]}>
+            {displayValue}
+          </Text>
           <Text style={styles.percentSymbol}>%</Text>
         </View>
       </View>
       
-      <View style={styles.statusContainer}>
-        <View style={[styles.statusDot, { backgroundColor: getColor(percentage) }]} />
-        <Text style={styles.statusText}>
-          {percentage > 50 ? 'Good' : percentage > 20 ? 'Low' : 'Critical'}
-        </Text>
-      </View>
+      {statusText && (
+        <View style={styles.statusContainer}>
+          <View style={[styles.statusDot, { backgroundColor: color }]} />
+          <Text style={[styles.statusText, { color }]}>
+            {statusText}
+          </Text>
+        </View>
+      )}
     </View>
-  );
-}
-
-// Separate component for animated percentage text
-interface AnimatedPercentageTextProps {
-  percentage: SharedValue<number>;
-  color: string;
-}
-
-function AnimatedPercentageText({ percentage, color }: AnimatedPercentageTextProps) {
-  const [displayValue, setDisplayValue] = React.useState(Math.round(percentage.value));
-  
-  useDerivedValue(() => {
-    const rounded = Math.round(percentage.value);
-    runOnJS(setDisplayValue)(rounded);
-    return rounded;
-  });
-
-  return (
-    <Text style={[styles.percentageText, { color }]}>
-      {displayValue}
-    </Text>
   );
 }
 
@@ -173,10 +195,16 @@ const styles = StyleSheet.create({
     color: '#64748b',
     marginLeft: 2,
   },
+  noDataText: {
+    fontSize: 56,
+    fontWeight: '300',
+    color: '#475569',
+  },
   statusContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    minHeight: 24,
   },
   statusDot: {
     width: 8,
@@ -185,7 +213,11 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 14,
-    color: '#94a3b8',
-    fontWeight: '500',
+    fontWeight: '600',
+  },
+  connectText: {
+    fontSize: 14,
+    color: '#64748b',
+    textAlign: 'center',
   },
 });

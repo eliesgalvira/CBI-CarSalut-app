@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,9 @@ import {
   ActionButton,
 } from './src/components';
 
+// Store for last received battery percentage (will be moved to Convex DB later)
+let lastReceivedBatteryPercentage: number | null = null;
+
 function AppContent() {
   const insets = useSafeAreaInsets();
   const {
@@ -26,18 +29,27 @@ function AppContent() {
     requestPermissions,
   } = useBLE();
 
+  // Local state for battery percentage
+  const [batteryPercentage, setBatteryPercentage] = useState<number | null>(lastReceivedBatteryPercentage);
+
   // Request permissions on mount
   useEffect(() => {
     requestPermissions();
   }, [requestPermissions]);
 
+  // Update battery percentage when heartbeat changes
+  useEffect(() => {
+    if (heartbeat?.counter !== undefined && heartbeat.counter !== null) {
+      const newPercentage = heartbeat.counter;
+      setBatteryPercentage(newPercentage);
+      // Store in module-level variable (will be Convex DB later)
+      lastReceivedBatteryPercentage = newPercentage;
+    }
+  }, [heartbeat?.counter]);
+
   const isScanning = status === 'scanning';
   const isConnected = status === 'connected';
   const isConnecting = status === 'connecting';
-
-  // Extract battery percentage from heartbeat data
-  // The ESP32 sends "XX%" format, so we parse out the number
-  const batteryPercentage = heartbeat?.counter ?? 100;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
