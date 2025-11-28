@@ -6,6 +6,7 @@ import {
   Characteristic,
   State,
   BleError,
+  ScanMode,
 } from 'react-native-ble-plx';
 import {
   BLEState,
@@ -18,6 +19,7 @@ import {
 const TARGET_DEVICE_NAME = 'CarTag';
 const RECONNECT_DELAY = 3000;
 const MAX_RECONNECT_ATTEMPTS = 5;
+const SCAN_TIMEOUT = 15000; // 15 seconds scan timeout
 
 // UUIDs matching the ESP32 firmware
 const SERVICE_UUID = '4fafc201-1fb5-459e-8fcc-c5c9c331914b';
@@ -42,6 +44,7 @@ export function useBLE() {
   const subscriptionRef = useRef<{ remove: () => void } | null>(null);
   const disconnectListenerRef = useRef<{ remove: () => void } | null>(null);
   const isDisconnectingRef = useRef(false);
+  const scanTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Initialize BLE Manager
   useEffect(() => {
@@ -59,6 +62,10 @@ export function useBLE() {
 
     return () => {
       subscription.remove();
+      if (scanTimeoutRef.current) {
+        clearTimeout(scanTimeoutRef.current);
+        scanTimeoutRef.current = null;
+      }
       disconnectListenerRef.current?.remove();
       disconnectListenerRef.current = null;
       // Don't call subscriptionRef.current?.remove() - just clear it
@@ -336,8 +343,11 @@ export function useBLE() {
   // Connect to device
   const connectToDevice = useCallback(
     async (device: Device) => {
+      console.log('[BLE] connectToDevice called for:', device.name);
+      
       // Don't connect if we're already connected or in the process of disconnecting
       if (isDisconnectingRef.current) {
+        console.log('[BLE] Skipping connect - isDisconnecting is true');
         return null;
       }
 
@@ -352,7 +362,9 @@ export function useBLE() {
         disconnectListenerRef.current?.remove();
         disconnectListenerRef.current = null;
 
+        console.log('[BLE] Connecting to device...');
         const connectedDevice = await device.connect();
+        console.log('[BLE] Connected to device:', connectedDevice.name);
         deviceRef.current = connectedDevice;
 
         // Monitor disconnection - store the subscription
@@ -422,14 +434,28 @@ export function useBLE() {
 
   // Start scanning
   const startScan = useCallback(async () => {
+    console.log('[BLE] startScan called');
     const manager = managerRef.current;
-    if (!manager) return;
+    if (!manager) {
+      console.log('[BLE] No manager available');
+      return;
+    }
+
+    // Reset flags
+    console.log('[BLE] Resetting flags - isDisconnecting was:', isDisconnectingRef.current);
+    isDisconnectingRef.current = false;
+    isReconnectingRef.current = false;
+    reconnectAttemptsRef.current = 0;
 
     const hasPermissions = await requestPermissions();
-    if (!hasPermissions) return;
+    if (!hasPermissions) {
+      console.log('[BLE] Permissions not granted');
+      return;
+    }
 
     // Check if Bluetooth is powered on
     const bleState = await manager.state();
+    console.log('[BLE] Bluetooth state:', bleState);
     if (bleState !== State.PoweredOn) {
       setState((prev) => ({
         ...prev,
@@ -438,46 +464,92 @@ export function useBLE() {
       return;
     }
 
+    // Clear any existing scan timeout
+    if (scanTimeoutRef.current) {
+      clearTimeout(scanTimeoutRef.current);
+      scanTimeoutRef.current = null;
+    }
+
+    // Stop any existing scan before starting a new one
+    try {
+      console.log('[BLE] Stopping any existing scan');
+      manager.stopDeviceScan();
+    } catch (e) {
+      console.log('[BLE] Stop scan error (ignored):', e);
+    }
+
+    // Small delay to let BLE stack settle after stopping previous scan
+    await new Promise(resolve => setTimeout(resolve, 200));
+
     setState((prev) => ({
       ...prev,
       status: 'scanning',
       error: null,
     }));
 
-    manager.startDeviceScan(null, null, async (error, device) => {
-      if (error) {
-        setState((prev) => ({
-          ...prev,
-          status: 'idle',
-          error: error.message,
-        }));
-        return;
-      }
+    console.log('[BLE] Starting device scan (no UUID filter, using device name)');
+    
+    // Don't filter by UUID - some ESP32s don't advertise service UUIDs properly
+    // Instead, scan for all devices and filter by name
+    manager.startDeviceScan(
+      null, // No UUID filter - scan all devices
+      { 
+        allowDuplicates: false,
+        scanMode: ScanMode.LowLatency,
+      }, 
+      async (error, device) => {
+        if (error) {
+          console.error('[BLE] Scan error:', error.message);
+          setState((prev) => ({
+            ...prev,
+            status: 'idle',
+            error: error.message,
+          }));
+          return;
+        }
 
-      if (device?.name?.includes(TARGET_DEVICE_NAME)) {
-        manager.stopDeviceScan();
-        await connectToDevice(device);
-      }
-    });
+        // Log devices we find (only ones with names to reduce noise)
+        if (device?.name) {
+          console.log('[BLE] Found device:', device.name, device.id);
+        }
 
-    // Stop scanning after 30 seconds
-    setTimeout(() => {
+        // Check device name
+        if (device?.name?.includes(TARGET_DEVICE_NAME)) {
+          console.log('[BLE] Found target device:', device.name);
+          if (scanTimeoutRef.current) {
+            clearTimeout(scanTimeoutRef.current);
+            scanTimeoutRef.current = null;
+          }
+          manager.stopDeviceScan();
+          await connectToDevice(device);
+        }
+      }
+    );
+
+    // Stop scanning after timeout
+    scanTimeoutRef.current = setTimeout(() => {
+      console.log('[BLE] Scan timeout reached');
       manager.stopDeviceScan();
       setState((prev) => {
         if (prev.status === 'scanning') {
           return {
             ...prev,
             status: 'idle',
-            error: `Device "${TARGET_DEVICE_NAME}" not found`,
+            error: `Device "${TARGET_DEVICE_NAME}" not found. Make sure the device is powered on and nearby.`,
           };
         }
         return prev;
       });
-    }, 30000);
+    }, SCAN_TIMEOUT);
   }, [requestPermissions, connectToDevice]);
 
   // Stop scanning
   const stopScan = useCallback(() => {
+    console.log('[BLE] stopScan called');
+    if (scanTimeoutRef.current) {
+      clearTimeout(scanTimeoutRef.current);
+      scanTimeoutRef.current = null;
+    }
     managerRef.current?.stopDeviceScan();
     setState((prev) => ({
       ...prev,
@@ -487,9 +559,24 @@ export function useBLE() {
 
   // Disconnect from device
   const disconnect = useCallback(async () => {
+    console.log('[BLE] disconnect called');
+    
     // Set flag to prevent reconnection attempts
     isDisconnectingRef.current = true;
     reconnectAttemptsRef.current = MAX_RECONNECT_ATTEMPTS;
+    
+    // Clear any scan timeout
+    if (scanTimeoutRef.current) {
+      clearTimeout(scanTimeoutRef.current);
+      scanTimeoutRef.current = null;
+    }
+    
+    // Stop any ongoing scan
+    try {
+      managerRef.current?.stopDeviceScan();
+    } catch (e) {
+      console.log('[BLE] Stop scan during disconnect error (ignored):', e);
+    }
     
     // Remove disconnect listener
     disconnectListenerRef.current?.remove();
@@ -500,21 +587,27 @@ export function useBLE() {
 
     if (deviceRef.current) {
       try {
+        console.log('[BLE] Cancelling connection to device');
         await deviceRef.current.cancelConnection();
+        console.log('[BLE] Connection cancelled');
       } catch (error) {
         // Ignore disconnect errors - device may already be disconnected
-        console.log('Disconnect:', error);
+        console.log('[BLE] Disconnect error (ignored):', error);
       }
     }
 
     deviceRef.current = null;
     
-    // Reset the disconnecting flag after a short delay
-    setTimeout(() => {
-      isDisconnectingRef.current = false;
-    }, 500);
-    
+    // Reset state immediately
     setState(initialState);
+    
+    // Reset the disconnecting flag after a longer delay to let BLE stack fully settle
+    console.log('[BLE] Waiting for BLE stack to settle...');
+    setTimeout(() => {
+      console.log('[BLE] isDisconnectingRef reset to false');
+      isDisconnectingRef.current = false;
+      isReconnectingRef.current = false;
+    }, 1000);
   }, []);
 
   // Select a characteristic to subscribe to

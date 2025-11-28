@@ -75,9 +75,12 @@ function AppContent() {
       {/* Status */}
       <View style={styles.statusContainer}>
         <StatusIndicator status={status} />
-        {deviceName && (
-          <Text style={styles.deviceName}>{deviceName}</Text>
-        )}
+        {/* Always render device name container to prevent layout shift */}
+        <View style={styles.deviceNameContainer}>
+          <Text style={styles.deviceName}>
+            {deviceName || ' '}
+          </Text>
+        </View>
       </View>
 
       {/* Battery Indicator */}
@@ -97,7 +100,15 @@ function AppContent() {
         {!isConnected && !isConnecting && (
           <ActionButton
             label={isScanning ? 'Stop Scan' : 'Scan for Device'}
-            onPress={isScanning ? stopScan : startScan}
+            onPress={() => {
+              if (isScanning) {
+                console.log('[UI] Stop Scan button pressed');
+                stopScan();
+              } else {
+                console.log('[UI] Scan button pressed');
+                startScan();
+              }
+            }}
             variant={isScanning ? 'secondary' : 'primary'}
             loading={isScanning}
           />
@@ -116,7 +127,10 @@ function AppContent() {
         {isConnected && (
           <ActionButton
             label="Disconnect"
-            onPress={disconnect}
+            onPress={() => {
+              console.log('[UI] Disconnect button pressed');
+              disconnect();
+            }}
             variant="danger"
           />
         )}
@@ -187,6 +201,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     marginBottom: 8,
+  },
+  deviceNameContainer: {
+    height: 20, // Fixed height to prevent layout shift
+    justifyContent: 'center',
   },
   deviceName: {
     fontSize: 14,

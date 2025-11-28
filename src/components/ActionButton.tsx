@@ -70,13 +70,13 @@ export function ActionButton({
 
 const styles = StyleSheet.create({
   button: {
-    paddingVertical: 16,
+    height: 52, // Fixed height to prevent layout shift
     paddingHorizontal: 32,
     borderRadius: 14,
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 140,
+    minWidth: 180, // Wide enough for longest label
   },
   label: {
     fontSize: 15,

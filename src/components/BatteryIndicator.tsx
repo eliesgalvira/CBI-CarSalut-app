@@ -29,10 +29,10 @@ const getColor = (pct: number) => {
   return '#EF4444'; // Red
 };
 
-const getStatusText = (pct: number) => {
+const getStatusText = (pct: number): string | null => {
   if (pct > 20) return null; // No status text for normal
-  if (pct >= 15) return 'Low Battery';
-  return 'Replace Battery';
+  if (pct >= 15) return 'Low battery: performance may be affected';
+  return 'Replace battery soon';
 };
 
 export function BatteryIndicator({
@@ -117,6 +117,12 @@ export function BatteryIndicator({
         <View style={styles.statusContainer}>
           <Text style={styles.connectText}>Connect to device to view battery level</Text>
         </View>
+        
+        {/* Last Updated - always rendered with fixed height to prevent layout shift */}
+        <View style={styles.lastUpdatedContainer}>
+          <Text style={styles.lastUpdatedLabel}>LAST UPDATED</Text>
+          <Text style={styles.lastUpdatedValue}>—</Text>
+        </View>
       </View>
     );
   }
@@ -166,14 +172,17 @@ export function BatteryIndicator({
         </View>
       </View>
       
-      {statusText && (
-        <View style={styles.statusContainer}>
-          <View style={[styles.statusDot, { backgroundColor: color }]} />
-          <Text style={[styles.statusText, { color }]}>
-            {statusText}
-          </Text>
-        </View>
-      )}
+      {/* Status container - always rendered with fixed height to prevent layout shift */}
+      <View style={styles.statusContainer}>
+        {statusText ? (
+          <>
+            <View style={[styles.statusDot, { backgroundColor: color }]} />
+            <Text style={[styles.statusText, { color }]}>
+              {statusText}
+            </Text>
+          </>
+        ) : null}
+      </View>
       
       {/* Last Updated */}
       <View style={styles.lastUpdatedContainer}>
@@ -227,8 +236,9 @@ const styles = StyleSheet.create({
   statusContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 8,
-    minHeight: 24,
+    height: 24, // Fixed height to prevent layout shift
   },
   statusDot: {
     width: 8,
