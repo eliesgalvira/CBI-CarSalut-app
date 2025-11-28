@@ -1,6 +1,9 @@
-# BLE Heartbeat Monitor
+# CarSalut
 
-A React Native (Expo) app that connects to a **CarTag** ESP32 device via Bluetooth Low Energy and displays battery percentage data.
+A monorepo containing two subprojects:
+
+1. **CarSalut App** — A React Native (Expo) app that connects to a CarTag ESP32 device via Bluetooth Low Energy and displays battery percentage data.
+2. **CarTag Firmware** — PlatformIO firmware for the ESP32 device (in the `CarTag/` folder).
 
 ## Features
 
@@ -14,7 +17,20 @@ A React Native (Expo) app that connects to a **CarTag** ESP32 device via Bluetoo
 - React Native 0.81.5 with Expo 54
 - React 19.1.0
 - `react-native-ble-plx` v3.5.0 (patched for RN 0.80+ compatibility)
-- ESP32 running PlatformIO firmware (in `cartag/` folder)
+
+## Project Structure
+
+```
+CBI-carsalut-app/
+├── CarTag/               # ESP32 firmware (PlatformIO project)
+│   ├── src/main.cpp      # Firmware source code
+│   └── platformio.ini    # PlatformIO configuration
+├── src/                  # React Native app source
+├── App.tsx               # App entry point
+├── android/              # Native Android build
+├── ios/                  # Native iOS build
+└── README.md             # This file
+```
 
 ## Requirements
 
