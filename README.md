@@ -30,7 +30,7 @@ unset ANDROID_SDK_ROOT  # Remove conflicting variable if set
 # Initialize ADB (ensure device is connected and authorized)
 which adb && adb devices
 
-# Install dependencies
+# Install dependencies (patch-package runs automatically via postinstall)
 npm install
 
 # Prebuild native code (required for dev client)
@@ -83,4 +83,8 @@ The app requests these permissions on Android:
 - `BLUETOOTH_SCAN` (Android 12+)
 - `BLUETOOTH_CONNECT` (Android 12+)
 - `ACCESS_FINE_LOCATION` (required for BLE scanning)
+
+## Patches
+
+This project uses `patch-package` to fix a crash in `react-native-ble-plx` on React Native 0.80+. The patch is applied automatically during `npm install`. See `patches/` directory and [docs/BLE-HOOK-ARCHITECTURE.md](docs/BLE-HOOK-ARCHITECTURE.md) for details.
 

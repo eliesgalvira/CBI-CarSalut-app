@@ -21,6 +21,7 @@ const RECONNECT_DELAY = 3000;
 const MAX_RECONNECT_ATTEMPTS = 5;
 const SCAN_TIMEOUT = 15000; // 15 seconds scan timeout
 const MAX_SCAN_RETRIES = 3; // Maximum scan retry attempts
+const CONNECTION_TIMEOUT = 10000; // 10 seconds connection timeout
 
 // UUIDs matching the ESP32 firmware
 const SERVICE_UUID = '4fafc201-1fb5-459e-8fcc-c5c9c331914b';
@@ -311,6 +312,11 @@ export function useBLE() {
           characteristic.uuid,
           (error: BleError | null, char: Characteristic | null) => {
             if (error) {
+              // Ignore "device was disconnected" errors during intentional disconnect
+              if (isDisconnectingRef.current) {
+                console.log('[BLE] Subscription ended (disconnect in progress)');
+                return;
+              }
               console.error('Characteristic monitoring error:', error);
               return;
             }
@@ -390,6 +396,9 @@ export function useBLE() {
         return null;
       }
 
+      // Track if we're currently connecting (to avoid cleanup race conditions)
+      let connectionAttemptActive = true;
+
       try {
         setState((prev) => ({
           ...prev,
@@ -402,7 +411,15 @@ export function useBLE() {
         disconnectListenerRef.current = null;
 
         console.log('[BLE] Connecting to device...');
-        const connectedDevice = await device.connect();
+        
+        // Use the library's built-in timeout option
+        // This is safer than Promise.race because it handles cleanup internally
+        const connectedDevice = await device.connect({
+          timeout: CONNECTION_TIMEOUT,
+          refreshGatt: 'OnConnected', // Refresh GATT cache on connection
+        });
+        
+        connectionAttemptActive = false;
         console.log('[BLE] Connected to device:', connectedDevice.name);
         deviceRef.current = connectedDevice;
 
@@ -458,13 +475,37 @@ export function useBLE() {
 
         return connectedDevice;
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : 'Connection failed';
+        connectionAttemptActive = false;
+        console.log('[BLE] Connection error:', error);
+        
+        // Extract error message safely (react-native-ble-plx can have weird error objects)
+        let errorMessage = 'Connection failed';
+        if (error instanceof Error) {
+          errorMessage = error.message;
+        } else if (error && typeof error === 'object') {
+          // BleError objects have a 'reason' property
+          const bleError = error as { message?: string; reason?: string };
+          errorMessage = bleError.message || bleError.reason || 'Connection failed';
+        }
+        
+        // Check for specific error types
+        if (errorMessage.includes('timeout') || errorMessage.includes('Timeout')) {
+          errorMessage = 'Connection timeout - device may be busy or out of range';
+        }
+        
+        // Don't try to cancel connection here - it can cause crashes in react-native-ble-plx
+        // when the device disconnected during connection (null error code bug)
+        // The library should clean up automatically
+        
         setState((prev) => ({
           ...prev,
-          status: 'disconnected',
+          status: 'idle',
           error: errorMessage,
         }));
+        
+        // Small delay before allowing retry to let BLE stack settle
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         return null;
       }
     },

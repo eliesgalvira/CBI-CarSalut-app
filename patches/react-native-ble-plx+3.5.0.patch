@@ -1,0 +1,30 @@
+diff --git a/node_modules/react-native-ble-plx/android/src/main/java/com/bleplx/utils/SafePromise.java b/node_modules/react-native-ble-plx/android/src/main/java/com/bleplx/utils/SafePromise.java
+index 0203473..dbb2e1e 100644
+--- a/node_modules/react-native-ble-plx/android/src/main/java/com/bleplx/utils/SafePromise.java
++++ b/node_modules/react-native-ble-plx/android/src/main/java/com/bleplx/utils/SafePromise.java
+@@ -22,19 +22,22 @@ public class SafePromise {
+ 
+   public void reject(String code, String message) {
+     if (isFinished.compareAndSet(false, true)) {
+-      promise.reject(code, message);
++      // Handle null code for React Native 0.80.0+ compatibility
++      promise.reject(code != null ? code : "BLE_ERROR", message);
+     }
+   }
+ 
+   public void reject(String code, Throwable e) {
+     if (isFinished.compareAndSet(false, true)) {
+-      promise.reject(code, e);
++      // Handle null code for React Native 0.80.0+ compatibility
++      promise.reject(code != null ? code : "BLE_ERROR", e);
+     }
+   }
+ 
+   public void reject(String code, String message, Throwable e) {
+     if (isFinished.compareAndSet(false, true)) {
+-      promise.reject(code, message, e);
++      // Handle null code for React Native 0.80.0+ compatibility
++      promise.reject(code != null ? code : "BLE_ERROR", message, e);
+     }
+   }
+ 

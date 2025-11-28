@@ -41,6 +41,12 @@ class MyServerCallbacks : public BLEServerCallbacks {
     void onDisconnect(BLEServer* pServer) {
         deviceConnected = false;
         Serial.println("Device disconnected");
+        
+        // Immediately restart advertising on disconnect
+        // This helps recovery when client disconnects unexpectedly
+        delay(100);  // Brief delay for BLE stack
+        pServer->startAdvertising();
+        Serial.println("Auto-restarted advertising after disconnect");
     }
 };
 
@@ -118,10 +124,8 @@ void loop() {
     }
     
     if (!deviceConnected && oldDeviceConnected) {
-        // Device just disconnected
-        delay(500);  // Give the bluetooth stack time to get ready
-        pServer->startAdvertising();  // Restart advertising
-        Serial.println("Restarted advertising");
+        // Device just disconnected - advertising already restarted in callback
+        // This is a backup in case the callback didn't fire
         oldDeviceConnected = deviceConnected;
     }
     

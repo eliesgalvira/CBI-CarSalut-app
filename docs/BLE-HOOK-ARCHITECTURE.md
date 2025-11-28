@@ -6,11 +6,12 @@ This document explains the architecture of the `useBLE` hook, which manages Blue
 
 The `useBLE` hook provides a React-friendly interface to the complex, event-driven BLE APIs. It handles:
 - Device scanning and discovery
-- Connection management
+- Connection management with timeout protection
 - Service/characteristic discovery
 - Data subscription (notifications)
 - Automatic reconnection
 - Error recovery with retries
+- GATT cache management
 
 ## Key Design Patterns
 
@@ -101,6 +102,43 @@ if (disconnectCompleteRef.current) {
 
 This ensures `startScan()` waits for the BLE stack to settle, even if user taps Scan immediately after Disconnect.
 
+### 5. Connection Timeout (Library Built-in)
+
+Android's `device.connect()` can hang indefinitely if there's stale connection state. We use the library's built-in timeout:
+
+```typescript
+const CONNECTION_TIMEOUT = 10000; // 10 seconds
+
+const connectedDevice = await device.connect({
+  timeout: CONNECTION_TIMEOUT,
+  refreshGatt: 'OnConnected', // Clear GATT cache
+});
+```
+
+**Why NOT use `Promise.race` with manual timeout?**
+
+`react-native-ble-plx` has a bug where calling `device.cancelConnection()` during certain error states causes a crash:
+```
+java.lang.NullPointerException: Parameter specified as non-null is null: 
+method com.facebook.react.bridge.PromiseImpl.reject, parameter code
+```
+
+This happens when:
+1. We start a connection with `Promise.race`
+2. The ESP32 disconnects during the connection handshake
+3. Our timeout fires and we call `device.cancelConnection()`
+4. The library tries to reject a Promise with a null error code → crash
+
+**Safe approach:**
+- Use the library's built-in `timeout` option - it handles cleanup internally
+- Don't call `device.cancelConnection()` in error handlers
+- Let the library manage its own state on connection failure
+
+**Key features:**
+- `refreshGatt: 'OnConnected'` clears Android's GATT cache, fixing stale connection issues
+- Library handles timeout cleanup internally (no crash)
+- 500ms settling delay after connection error before allowing retry
+
 ## State Machine
 
 The hook manages these connection states:
@@ -168,10 +206,14 @@ This pattern ensures that even rapid button taps can't queue up multiple scans b
 5. Resolves Deferred (allows pending scans to proceed)
 
 ### `connectToDevice()`
-1. Establishes BLE connection
-2. Sets up disconnect listener (for auto-reconnect)
-3. Discovers services and characteristics
-4. Auto-subscribes to battery characteristic
+1. Establishes BLE connection with 10s timeout (library's built-in timeout)
+2. Uses `refreshGatt: 'OnConnected'` to clear stale GATT cache
+3. Sets up disconnect listener (for auto-reconnect)
+4. Discovers services and characteristics
+5. Auto-subscribes to battery characteristic
+6. On failure, extracts error message safely from BleError objects
+7. Does NOT call `cancelConnection()` in error handler (causes crash)
+8. 500ms delay after error for BLE stack to settle
 
 ### `attemptScan()` (internal)
 1. Stops any existing scan (awaits Promise)
@@ -187,7 +229,34 @@ This pattern ensures that even rapid button taps can't queue up multiple scans b
 | "Cannot start scanning operation" | BLE stack busy | Retry with backoff |
 | "Bluetooth is turned off" | Adapter disabled | Show error to user |
 | "Connection failed" | Device out of range | Auto-reconnect or show error |
+| "Connection timeout" | Stale connection or device busy | Show error, user can retry (don't call cancelConnection!) |
+| "Unknown error occurred" | Device disconnected during connect | Let library clean up, show error |
 | "Permissions required" | User denied | Prompt for permissions |
+
+### Known Library Bug: Null Error Code Crash
+
+`react-native-ble-plx` can crash with `NullPointerException` when:
+- Device disconnects during connection handshake
+- Any BLE error occurs on React Native 0.80.0+
+
+**Root cause:** The library calls `promise.reject(null, errorMessage)` in many places, but React Native 0.80.0+ requires non-null error codes.
+
+**Solution:** We use `patch-package` to fix the library's `SafePromise.java`:
+
+```java
+// Before (crashes on RN 0.80+):
+promise.reject(code, message);
+
+// After (patched):
+promise.reject(code != null ? code : "BLE_ERROR", message);
+```
+
+**Setup:**
+1. `npm install patch-package --save-dev`
+2. Patch file: `patches/react-native-ble-plx+3.5.0.patch`
+3. `postinstall` script in `package.json` runs `patch-package` automatically
+
+This patch will be obsolete once PR [#1312](https://github.com/dotintent/react-native-ble-plx/pull/1312) is merged.
 
 ## Android-Specific Considerations
 
@@ -195,10 +264,12 @@ This pattern ensures that even rapid button taps can't queue up multiple scans b
 2. **Location permission**: Required for BLE scanning on Android < 12.
 3. **Stack settling time**: 1.5s delay after disconnect before scanning.
 4. **Scan mode**: Using `LowLatency` for faster discovery.
+5. **GATT cache**: Android caches service/characteristic data. Use `refreshGatt: 'OnConnected'` to clear it when reconnecting to avoid stale data.
+6. **Connection hanging**: `device.connect()` can hang indefinitely. Use the library's built-in `timeout` option.
+7. **cancelConnection() bug**: Don't call `device.cancelConnection()` in error handlers - causes null pointer crash in `react-native-ble-plx` when device disconnected during connect.
 
 ## Future Improvements
 
 1. **iOS background mode**: Add `restoreStateIdentifier` for background BLE
 2. **Bonding**: Implement device bonding for faster reconnection
 3. **MTU negotiation**: Request larger MTU for faster data transfer
-4. **Connection timeout**: Add timeout for stuck connections
