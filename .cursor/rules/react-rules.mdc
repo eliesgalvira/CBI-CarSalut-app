@@ -1,0 +1,57 @@
+---
+alwaysApply: true
+description: Idiomatic React Native coding rules for composable, declarative, functional apps with disciplined abstraction and effect management, adapted to mobile.
+globs: **/*.jsx,**/*.tsx
+---
+
+# Idiomatic React Native Rules
+
+## Core Philosophy
+- Composable, declarative, functional; extract only for reuse or to isolate complexity.
+- Prefer functional data pipelines: map/filter/reduce/slice, immutability, and pure transforms over in-place mutation.
+- Prefer cross‑platform primitives; branch by platform only when needed.
+- Separate presentation (View/Text/Image/styles) from data/effects.
+
+## Component Structure
+- Function components with hooks; keep renders pure.
+- Co-locate state; lift only when multiple consumers need it.
+- Props down, callbacks up; use Context to avoid deep prop drilling.
+
+## State Management
+- `useState` for local state; derive, don’t duplicate.
+- Use functional updates when based on previous state.
+- Keep state minimal; use React Query (server state) or a small store (global state) when local state doesn’t scale.
+
+## Side Effects
+- No side effects in render.
+- Event-driven effects live in handlers (presses, gestures).
+- `useEffect` to sync with outside systems (AppState, NetInfo, Appearance, Linking, storage, analytics).
+- `useLayoutEffect` only for pre-paint needs (layout measurement, imperative scroll to prevent flicker).
+- `useSyncExternalStore` for external stores; define `subscribe/getSnapshot` outside or memoize; clean up listeners/timers.
+
+## Refs
+- `useRef` for persisted values and imperative methods (`TextInput.focus`, `ScrollView.scrollTo`).
+- Don’t read/write refs during render; do it in effects or handlers.
+
+## JSX, Layout, and Lists
+- Use RN primitives and Flexbox; `StyleSheet.create` or stable style objects.
+- Avoid inline style/object literals in hot paths; memoize when conditional: `[base, on && onStyle]`.
+- Safe areas: use `SafeAreaView`/library wrapper.
+- Lists: prefer `FlatList/SectionList`; provide `keyExtractor`, tune virtualization, memoize item components.
+
+## Conditional Rendering
+- Use `if/else`, ternaries, or `&&`; extract complex branches.
+
+## Abstraction & Reuse
+- Extract components/hooks/helpers only if reused or to isolate platform/native complexity (navigation, permissions, gestures, animations).
+
+## Performance
+- Keep dependency arrays accurate; `useMemo`/`useCallback`; `React.memo` for pure children.
+- Minimize JS-bridge work on critical interactions; defer with `InteractionManager.runAfterInteractions`.
+- Prefer native-driven animations (Reanimated/Moti) and `LayoutAnimation` for layout transitions.
+- Optimize images (sizes, caching/prefetch).
+- For responsiveness, use `useWindowDimensions` over ad‑hoc listeners.
+
+## Context
+- Use for widely used data (theme, auth, locale); keep values stable (memoize).
+- Context teleports; manage state with hooks/stores, then pass via Context.
