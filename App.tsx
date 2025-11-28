@@ -3,29 +3,26 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
 } from 'react-native';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBLE } from './src/hooks/useBLE';
 import {
   StatusIndicator,
   CounterDisplay,
   ActionButton,
-  ServiceList,
 } from './src/components';
 
-export default function App() {
+function AppContent() {
+  const insets = useSafeAreaInsets();
   const {
     status,
     deviceName,
     heartbeat,
     error,
-    services,
-    selectedCharacteristic,
     startScan,
     stopScan,
     disconnect,
-    selectCharacteristic,
     requestPermissions,
   } = useBLE();
 
@@ -39,7 +36,7 @@ export default function App() {
   const isConnecting = status === 'connecting';
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       <StatusBar barStyle="light-content" backgroundColor="#0a0a0f" />
 
       {/* Background decoration */}
@@ -48,8 +45,8 @@ export default function App() {
 
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.appTitle}>CarSalut</Text>
-        <Text style={styles.appSubtitle}>BLE Heartbeat Monitor</Text>
+        <Text style={styles.appTitle}>CarTag</Text>
+        <Text style={styles.appSubtitle}>BLE Monitor</Text>
       </View>
 
       {/* Status */}
@@ -70,15 +67,6 @@ export default function App() {
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
         </View>
-      )}
-
-      {/* Service List (when connected) */}
-      {isConnected && (
-        <ServiceList
-          services={services}
-          selectedCharacteristic={selectedCharacteristic}
-          onSelectCharacteristic={selectCharacteristic}
-        />
       )}
 
       {/* Action Buttons */}
@@ -115,11 +103,19 @@ export default function App() {
       <View style={styles.footer}>
         <Text style={styles.footerText}>
           {isConnected
-            ? 'Tap a characteristic with [N] to switch data source'
-            : 'Make sure your CarSalut device is powered on'}
+            ? 'Receiving data from CarTag'
+            : 'Make sure your CarTag device is powered on'}
         </Text>
       </View>
-    </SafeAreaView>
+    </View>
+  );
+}
+
+export default function App() {
+  return (
+    <SafeAreaProvider>
+      <AppContent />
+    </SafeAreaProvider>
   );
 }
 

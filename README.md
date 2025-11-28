@@ -1,13 +1,12 @@
 # BLE Heartbeat Monitor
 
-A React Native (Expo) app that connects to a **CarSalut** ESP32 device via Bluetooth Low Energy and displays the heartbeat counter.
+A React Native (Expo) app that connects to a **CarTag** ESP32 device via Bluetooth Low Energy and displays data.
 
 ## Features
 
-- 📡 BLE scanning for "CarSalut" device
+- 📡 BLE scanning for "CarTag" device
 - 🔗 Automatic connection and reconnection
-- 📊 Real-time heartbeat counter display
-- 🔍 Dynamic service/characteristic discovery
+- 📊 Real-time data display
 - 📱 Clean, modern dark UI
 
 ## Requirements
@@ -15,11 +14,14 @@ A React Native (Expo) app that connects to a **CarSalut** ESP32 device via Bluet
 - Node.js 18+
 - Android device connected via USB (for development)
 - Android SDK installed at `/opt/android-sdk`
-- ESP32 device named "CarSalut" broadcasting BLE data
+- ESP32 device named "CarTag" broadcasting BLE data
 
 ## Setup
 
 ```bash
+# Initialize ADB (ensure device is connected and authorized)
+which adb && adb devices
+
 # Install dependencies
 npm install
 

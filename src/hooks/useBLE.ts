@@ -236,8 +236,18 @@ export function useBLE() {
   // Subscribe to a characteristic for notifications
   const subscribeToCharacteristic = useCallback(
     async (device: Device, characteristic: DiscoveredCharacteristic) => {
-      // Remove existing subscription
-      subscriptionRef.current?.remove();
+      // Remove existing subscription safely
+      if (subscriptionRef.current) {
+        try {
+          subscriptionRef.current.remove();
+        } catch (e) {
+          // Ignore errors during cleanup
+          console.log('Subscription cleanup:', e);
+        }
+        subscriptionRef.current = null;
+        // Small delay to let the BLE stack settle
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
 
       try {
         const subscription = device.monitorCharacteristicForService(
