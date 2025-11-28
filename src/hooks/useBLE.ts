@@ -23,6 +23,14 @@ const SCAN_TIMEOUT = 15000; // 15 seconds scan timeout
 const MAX_SCAN_RETRIES = 3; // Maximum scan retry attempts
 const CONNECTION_TIMEOUT = 10000; // 10 seconds connection timeout
 
+// Logging helper - verbose in dev, minimal in production
+const log = {
+  debug: (...args: unknown[]) => __DEV__ && console.log('[BLE]', ...args),
+  info: (...args: unknown[]) => console.log('[BLE]', ...args),
+  warn: (...args: unknown[]) => __DEV__ && console.warn('[BLE]', ...args),
+  error: (...args: unknown[]) => __DEV__ && console.error('[BLE]', ...args),
+};
+
 // UUIDs matching the ESP32 firmware
 const SERVICE_UUID = '4fafc201-1fb5-459e-8fcc-c5c9c331914b';
 const CHARACTERISTIC_UUID = 'beb5483e-36e1-4688-b7f5-ea07361b26a8';
@@ -284,7 +292,7 @@ export function useBLE() {
 
       return discoveredServices;
     } catch (error) {
-      console.error('Failed to discover services:', error);
+      log.warn('Failed to discover services:', error);
       return [];
     }
   }, []);
@@ -298,7 +306,7 @@ export function useBLE() {
           subscriptionRef.current.remove();
         } catch (e) {
           // Ignore errors during cleanup
-          console.log('Subscription cleanup:', e);
+          log.debug('Subscription cleanup:', e);
         }
         subscriptionRef.current = null;
         // Small delay to let the BLE stack settle
@@ -306,7 +314,7 @@ export function useBLE() {
       }
 
       try {
-        console.log('Subscribing to characteristic:', characteristic.uuid);
+        log.debug('Subscribing to characteristic:', characteristic.uuid);
         const subscription = device.monitorCharacteristicForService(
           characteristic.serviceUUID,
           characteristic.uuid,
@@ -314,17 +322,17 @@ export function useBLE() {
             if (error) {
               // Ignore "device was disconnected" errors during intentional disconnect
               if (isDisconnectingRef.current) {
-                console.log('[BLE] Subscription ended (disconnect in progress)');
+                log.debug('Subscription ended (disconnect in progress)');
                 return;
               }
-              console.error('Characteristic monitoring error:', error);
+              log.warn('Characteristic monitoring error:', error);
               return;
             }
 
             if (char?.value) {
-              console.log('Received BLE data:', char.value);
+              log.debug('Received BLE data:', char.value);
               const heartbeat = parseHeartbeatData(char.value);
-              console.log('Parsed heartbeat:', heartbeat);
+              log.debug('Parsed heartbeat:', heartbeat);
               if (heartbeat) {
                 setState((prev) => ({
                   ...prev,
@@ -344,7 +352,7 @@ export function useBLE() {
 
         return true;
       } catch (error) {
-        console.error('Failed to subscribe to characteristic:', error);
+        log.warn('Failed to subscribe to characteristic:', error);
         return false;
       }
     },
@@ -354,14 +362,14 @@ export function useBLE() {
   // Auto-subscribe to first notifiable characteristic
   const autoSubscribe = useCallback(
     async (device: Device, services: DiscoveredService[]) => {
-      console.log('Auto-subscribing, found services:', services.map(s => s.uuid));
+      log.debug('Auto-subscribing, found services:', services.map(s => s.uuid));
       
       // First, try to find our specific characteristic
       for (const service of services) {
         if (service.uuid.toLowerCase() === SERVICE_UUID.toLowerCase()) {
           for (const char of service.characteristics) {
             if (char.uuid.toLowerCase() === CHARACTERISTIC_UUID.toLowerCase() && char.isNotifiable) {
-              console.log('Found target characteristic:', char.uuid);
+              log.debug('Found target characteristic:', char.uuid);
               await subscribeToCharacteristic(device, char);
               return true;
             }
@@ -373,13 +381,13 @@ export function useBLE() {
       for (const service of services) {
         for (const char of service.characteristics) {
           if (char.isNotifiable) {
-            console.log('Using fallback characteristic:', char.uuid);
+            log.debug('Using fallback characteristic:', char.uuid);
             await subscribeToCharacteristic(device, char);
             return true;
           }
         }
       }
-      console.log('No notifiable characteristic found');
+      log.warn('No notifiable characteristic found');
       return false;
     },
     [subscribeToCharacteristic]
@@ -388,11 +396,11 @@ export function useBLE() {
   // Connect to device
   const connectToDevice = useCallback(
     async (device: Device) => {
-      console.log('[BLE] connectToDevice called for:', device.name);
+      log.debug('connectToDevice called for:', device.name);
       
       // Don't connect if we're already connected or in the process of disconnecting
       if (isDisconnectingRef.current) {
-        console.log('[BLE] Skipping connect - isDisconnecting is true');
+        log.debug('Skipping connect - isDisconnecting is true');
         return null;
       }
 
@@ -410,7 +418,7 @@ export function useBLE() {
         disconnectListenerRef.current?.remove();
         disconnectListenerRef.current = null;
 
-        console.log('[BLE] Connecting to device...');
+        log.debug('Connecting to device...');
         
         // Use the library's built-in timeout option
         // This is safer than Promise.race because it handles cleanup internally
@@ -420,7 +428,7 @@ export function useBLE() {
         });
         
         connectionAttemptActive = false;
-        console.log('[BLE] Connected to device:', connectedDevice.name);
+        log.info('Connected to device:', connectedDevice.name);
         deviceRef.current = connectedDevice;
 
         // Monitor disconnection - store the subscription
@@ -430,7 +438,7 @@ export function useBLE() {
             return;
           }
 
-          console.log('Device disconnected:', disconnectedDevice?.name, error?.message);
+          log.info('Device disconnected unexpectedly:', disconnectedDevice?.name, error?.message);
 
           // Clear subscription ref without calling remove (avoid crash)
           subscriptionRef.current = null;
@@ -476,10 +484,12 @@ export function useBLE() {
         return connectedDevice;
       } catch (error) {
         connectionAttemptActive = false;
-        console.log('[BLE] Connection error:', error);
+        log.debug('Connection error:', error);
         
         // Extract error message safely (react-native-ble-plx can have weird error objects)
         let errorMessage = 'Connection failed';
+        let showToUser = true;
+        
         if (error instanceof Error) {
           errorMessage = error.message;
         } else if (error && typeof error === 'object') {
@@ -488,9 +498,14 @@ export function useBLE() {
           errorMessage = bleError.message || bleError.reason || 'Connection failed';
         }
         
-        // Check for specific error types
+        // Check for specific error types and provide user-friendly messages
         if (errorMessage.includes('timeout') || errorMessage.includes('Timeout')) {
-          errorMessage = 'Connection timeout - device may be busy or out of range';
+          errorMessage = 'Connection timed out. Make sure the device is nearby and try again.';
+        } else if (errorMessage.includes('cancelled') || errorMessage.includes('Cancelled')) {
+          // User-initiated cancellation or quick re-scan - don't show error
+          showToUser = false;
+        } else if (errorMessage.includes('disconnected')) {
+          errorMessage = 'Device disconnected during connection. Please try again.';
         }
         
         // Don't try to cancel connection here - it can cause crashes in react-native-ble-plx
@@ -500,7 +515,7 @@ export function useBLE() {
         setState((prev) => ({
           ...prev,
           status: 'idle',
-          error: errorMessage,
+          error: showToUser ? errorMessage : null,
         }));
         
         // Small delay before allowing retry to let BLE stack settle
@@ -514,17 +529,17 @@ export function useBLE() {
 
   // Start scanning
   const startScan = useCallback(async () => {
-    console.log('[BLE] startScan called');
+    log.debug('startScan called');
     const manager = managerRef.current;
     if (!manager) {
-      console.log('[BLE] No manager available');
+      log.warn('No manager available');
       return;
     }
 
     // CRITICAL: Prevent multiple concurrent scan operations
     // This check MUST happen synchronously before any await
     if (isScanningRef.current) {
-      console.log('[BLE] Scan already in progress, ignoring');
+      log.debug('Scan already in progress, ignoring');
       return;
     }
 
@@ -536,23 +551,23 @@ export function useBLE() {
       status: 'preparing',
       error: null,
     }));
-    console.log('[BLE] Set preparing state synchronously');
+    log.debug('Set preparing state synchronously');
 
     // Now we can safely do async work - button is already disabled
     // IMPORTANT: Wait for any pending disconnect to complete
     // This prevents the "Cannot start scanning operation" error
     if (disconnectCompleteRef.current) {
-      console.log('[BLE] Waiting for pending disconnect to complete...');
+      log.debug('Waiting for pending disconnect to complete...');
       try {
         await disconnectCompleteRef.current.promise;
-        console.log('[BLE] Disconnect completed, proceeding with scan');
+        log.debug('Disconnect completed, proceeding with scan');
       } catch (e) {
-        console.log('[BLE] Disconnect wait error (ignored):', e);
+        log.debug('Disconnect wait error (ignored):', e);
       }
     }
 
     // Reset other flags (isScanningRef already set above)
-    console.log('[BLE] Resetting flags - isDisconnecting was:', isDisconnectingRef.current);
+    log.debug('Resetting flags - isDisconnecting was:', isDisconnectingRef.current);
     isDisconnectingRef.current = false;
     isReconnectingRef.current = false;
     reconnectAttemptsRef.current = 0;
@@ -560,7 +575,7 @@ export function useBLE() {
 
     const hasPermissions = await requestPermissions();
     if (!hasPermissions) {
-      console.log('[BLE] Permissions not granted');
+      log.debug('Permissions not granted');
       isScanningRef.current = false;
       setState((prev) => ({ ...prev, status: 'idle' }));
       return;
@@ -568,7 +583,7 @@ export function useBLE() {
 
     // Check if Bluetooth is powered on
     const bleState = await manager.state();
-    console.log('[BLE] Bluetooth state:', bleState);
+    log.debug('Bluetooth state:', bleState);
     if (bleState !== State.PoweredOn) {
       setState((prev) => ({
         ...prev,
@@ -591,25 +606,25 @@ export function useBLE() {
       // Stop any existing scan before starting a new one
       // In v3.x, stopDeviceScan() returns a Promise - await it to ensure scan is fully stopped
       try {
-        console.log('[BLE] Stopping any existing scan (awaiting Promise)...');
+        log.debug('Stopping any existing scan (awaiting Promise)...');
         await manager.stopDeviceScan();
-        console.log('[BLE] Previous scan stopped successfully');
+        log.debug('Previous scan stopped successfully');
       } catch (e) {
-        console.log('[BLE] Stop scan error (ignored):', e);
+        log.debug('Stop scan error (ignored):', e);
       }
 
       // Small additional delay for the native BLE stack to fully release resources
       // This is a safety margin - the await above should handle most cases
       const extraDelay = scanRetryCountRef.current * 200; // 0ms first try, 200ms, 400ms, 600ms
       if (extraDelay > 0) {
-        console.log(`[BLE] Extra delay ${extraDelay}ms for retry...`);
+        log.debug(`Extra delay ${extraDelay}ms for retry...`);
         await new Promise(resolve => setTimeout(resolve, extraDelay));
       }
 
       // Use Deferred pattern: the scan callback will resolve/reject this
       const scanStarted = new Deferred<boolean, Error>();
 
-      console.log('[BLE] Starting device scan (attempt', scanRetryCountRef.current + 1, ')');
+      log.debug('Starting device scan (attempt', scanRetryCountRef.current + 1, ')');
       
       try {
         manager.startDeviceScan(
@@ -620,12 +635,13 @@ export function useBLE() {
           }, 
           async (error, device) => {
             if (error) {
-              console.error('[BLE] Scan error:', error.message);
+              // These errors are expected during BLE stack contention - don't alarm users
+              log.debug('Scan callback error (will retry):', error.message);
               
               // Check if we should retry (only on first error, Deferred handles idempotency)
               if (!scanStarted.isSettled && scanRetryCountRef.current < MAX_SCAN_RETRIES) {
                 scanRetryCountRef.current++;
-                console.log(`[BLE] Retrying scan (attempt ${scanRetryCountRef.current + 1}/${MAX_SCAN_RETRIES + 1})`);
+                log.debug(`Retrying scan (attempt ${scanRetryCountRef.current + 1}/${MAX_SCAN_RETRIES + 1})`);
                 
                 // Stop the failed scan
                 try {
@@ -638,13 +654,13 @@ export function useBLE() {
                 const success = await attemptScan();
                 scanStarted.resolve(success);
               } else if (!scanStarted.isSettled) {
-                // Max retries reached, give up
-                console.error('[BLE] Max scan retries reached');
+                // Max retries reached, give up with user-friendly message
+                log.warn('Max scan retries reached');
                 isScanningRef.current = false;
                 setState((prev) => ({
                   ...prev,
                   status: 'idle',
-                  error: 'Cannot start scanning. Please try again.',
+                  error: 'Bluetooth is busy. Please wait a moment and try again.',
                 }));
                 scanStarted.resolve(false);
               }
@@ -656,12 +672,12 @@ export function useBLE() {
 
             // Log devices we find (only ones with names to reduce noise)
             if (device?.name) {
-              console.log('[BLE] Found device:', device.name, device.id);
+              log.debug('Found device:', device.name, device.id);
             }
 
             // Check device name
             if (device?.name?.includes(TARGET_DEVICE_NAME)) {
-              console.log('[BLE] Found target device:', device.name);
+              log.info('Found target device:', device.name);
               if (scanTimeoutRef.current) {
                 clearTimeout(scanTimeoutRef.current);
                 scanTimeoutRef.current = null;
@@ -677,12 +693,12 @@ export function useBLE() {
         // If we don't get a callback within 500ms, assume it started
         setTimeout(() => {
           if (!scanStarted.isSettled) {
-            console.log('[BLE] Scan started (no immediate callback)');
+            log.debug('Scan started (no immediate callback)');
             scanStarted.resolve(true);
           }
         }, 500);
       } catch (e) {
-        console.error('[BLE] startDeviceScan threw:', e);
+        log.warn('startDeviceScan threw:', e);
         scanStarted.resolve(false);
       }
 
@@ -704,7 +720,7 @@ export function useBLE() {
 
     // Stop scanning after timeout
     scanTimeoutRef.current = setTimeout(() => {
-      console.log('[BLE] Scan timeout reached');
+      log.debug('Scan timeout reached');
       manager.stopDeviceScan();
       isScanningRef.current = false;
       setState((prev) => {
@@ -712,7 +728,7 @@ export function useBLE() {
           return {
             ...prev,
             status: 'idle',
-            error: `Device "${TARGET_DEVICE_NAME}" not found. Make sure the device is powered on and nearby.`,
+            error: `"${TARGET_DEVICE_NAME}" not found. Make sure it's powered on and nearby.`,
           };
         }
         return prev;
@@ -722,7 +738,7 @@ export function useBLE() {
 
   // Stop scanning
   const stopScan = useCallback(async () => {
-    console.log('[BLE] stopScan called');
+    log.debug('stopScan called');
     if (scanTimeoutRef.current) {
       clearTimeout(scanTimeoutRef.current);
       scanTimeoutRef.current = null;
@@ -731,7 +747,7 @@ export function useBLE() {
     try {
       await managerRef.current?.stopDeviceScan();
     } catch (e) {
-      console.log('[BLE] Stop scan error (ignored):', e);
+      log.debug('Stop scan error (ignored):', e);
     }
     setState((prev) => ({
       ...prev,
@@ -741,7 +757,7 @@ export function useBLE() {
 
   // Disconnect from device
   const disconnect = useCallback(async () => {
-    console.log('[BLE] disconnect called');
+    log.debug('disconnect called');
     
     // Create a Deferred that will resolve when disconnect is fully complete
     // This allows startScan to wait for it
@@ -763,7 +779,7 @@ export function useBLE() {
     try {
       await managerRef.current?.stopDeviceScan();
     } catch (e) {
-      console.log('[BLE] Stop scan during disconnect error (ignored):', e);
+      log.debug('Stop scan during disconnect error (ignored):', e);
     }
     
     // Remove disconnect listener
@@ -775,12 +791,12 @@ export function useBLE() {
 
     if (deviceRef.current) {
       try {
-        console.log('[BLE] Cancelling connection to device');
+        log.debug('Cancelling connection to device');
         await deviceRef.current.cancelConnection();
-        console.log('[BLE] Connection cancelled');
+        log.debug('Connection cancelled');
       } catch (error) {
         // Ignore disconnect errors - device may already be disconnected
-        console.log('[BLE] Disconnect error (ignored):', error);
+        log.debug('Disconnect error (ignored):', error);
       }
     }
 
@@ -790,9 +806,9 @@ export function useBLE() {
     setState(initialState);
     
     // Wait for BLE stack to fully settle, then resolve the Deferred
-    console.log('[BLE] Waiting for BLE stack to settle...');
+    log.debug('Waiting for BLE stack to settle...');
     setTimeout(() => {
-      console.log('[BLE] Disconnect fully complete');
+      log.debug('Disconnect fully complete');
       isDisconnectingRef.current = false;
       isReconnectingRef.current = false;
       disconnectComplete.resolve();

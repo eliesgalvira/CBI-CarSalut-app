@@ -102,10 +102,10 @@ function AppContent() {
             label={isScanning ? 'Stop Scan' : 'Scan for Device'}
             onPress={() => {
               if (isScanning) {
-                console.log('[UI] Stop Scan button pressed');
+                __DEV__ && console.log('[UI] Stop Scan button pressed');
                 stopScan();
               } else {
-                console.log('[UI] Scan button pressed');
+                __DEV__ && console.log('[UI] Scan button pressed');
                 startScan();
               }
             }}
@@ -128,7 +128,7 @@ function AppContent() {
           <ActionButton
             label="Disconnect"
             onPress={() => {
-              console.log('[UI] Disconnect button pressed');
+              __DEV__ && console.log('[UI] Disconnect button pressed');
               disconnect();
             }}
             variant="danger"
