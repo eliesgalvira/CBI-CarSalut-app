@@ -135,8 +135,8 @@ void loop() {
             updateCount++;
             
             // Decrease battery by 1% every 3 updates
-            if (updateCount >= 3) {
-                batteryLevel--;
+            if (updateCount >= 1) {
+                batteryLevel = batteryLevel - 2;
                 updateCount = 0;
                 
                 // Reset to 100 when reaching 0
