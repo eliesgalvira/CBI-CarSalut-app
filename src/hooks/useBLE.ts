@@ -15,7 +15,7 @@ import {
   DiscoveredCharacteristic,
 } from '../types';
 
-const TARGET_DEVICE_NAME = 'CarSalut';
+const TARGET_DEVICE_NAME = 'CarTag';
 const RECONNECT_DELAY = 3000;
 const MAX_RECONNECT_ATTEMPTS = 5;
 
