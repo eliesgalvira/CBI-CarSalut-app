@@ -53,7 +53,8 @@ export function useBLE() {
 
     return () => {
       subscription.remove();
-      subscriptionRef.current?.remove();
+      // Don't call subscriptionRef.current?.remove() - just clear it
+      subscriptionRef.current = null;
       managerRef.current?.destroy();
     };
   }, []);
@@ -320,6 +321,9 @@ export function useBLE() {
         connectedDevice.onDisconnected((error, disconnectedDevice) => {
           console.log('Device disconnected:', disconnectedDevice?.name, error);
 
+          // Clear subscription ref without calling remove (avoid crash)
+          subscriptionRef.current = null;
+
           setState((prev) => ({
             ...prev,
             status: 'disconnected',
@@ -438,20 +442,23 @@ export function useBLE() {
 
   // Disconnect from device
   const disconnect = useCallback(async () => {
-    subscriptionRef.current?.remove();
+    // Prevent auto-reconnect first
+    reconnectAttemptsRef.current = MAX_RECONNECT_ATTEMPTS;
+    
+    // Clear the subscription reference without calling remove()
+    // The subscription will be cleaned up when the connection is cancelled
     subscriptionRef.current = null;
 
     if (deviceRef.current) {
       try {
         await deviceRef.current.cancelConnection();
       } catch (error) {
-        console.error('Disconnect error:', error);
+        // Ignore disconnect errors - device may already be disconnected
+        console.log('Disconnect:', error);
       }
     }
 
     deviceRef.current = null;
-    reconnectAttemptsRef.current = MAX_RECONNECT_ATTEMPTS; // Prevent auto-reconnect
-
     setState(initialState);
   }, []);
 

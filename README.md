@@ -12,13 +12,21 @@ A React Native (Expo) app that connects to a **CarTag** ESP32 device via Bluetoo
 ## Requirements
 
 - Node.js 18+
+- **JDK 17** (React Native requires JDK 17, not newer versions)
 - Android device connected via USB (for development)
-- Android SDK installed at `/opt/android-sdk`
+- Android SDK (typically at `~/Android/Sdk`)
 - ESP32 device named "CarTag" broadcasting BLE data
 
 ## Setup
 
 ```bash
+# Ensure JDK 17 is installed and set as default
+java -version  # Should show 17.x.x
+
+# Set environment variables (add to ~/.zshrc for persistence)
+export ANDROID_HOME=$HOME/Android/Sdk
+unset ANDROID_SDK_ROOT  # Remove conflicting variable if set
+
 # Initialize ADB (ensure device is connected and authorized)
 which adb && adb devices
 
