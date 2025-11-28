@@ -54,7 +54,7 @@ function AppContent() {
     }
   }, [heartbeat?.counter, heartbeat?.timestamp]);
 
-  const isScanning = status === 'scanning';
+  const isScanning = status === 'scanning' || status === 'preparing';
   const isConnected = status === 'connected';
   const isConnecting = status === 'connecting';
 

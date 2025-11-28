@@ -1,4 +1,4 @@
-export type ConnectionStatus = 'idle' | 'scanning' | 'connecting' | 'connected' | 'disconnected';
+export type ConnectionStatus = 'idle' | 'preparing' | 'scanning' | 'connecting' | 'connected' | 'disconnected';
 
 export interface HeartbeatData {
   counter: number;

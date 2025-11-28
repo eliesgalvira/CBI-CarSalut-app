@@ -11,6 +11,7 @@ const statusConfig: Record<
   { color: string; label: string; pulse: boolean }
 > = {
   idle: { color: '#4a4a5e', label: 'Ready', pulse: false },
+  preparing: { color: '#f59e0b', label: 'Preparing...', pulse: true },
   scanning: { color: '#f59e0b', label: 'Scanning...', pulse: true },
   connecting: { color: '#3b82f6', label: 'Connecting...', pulse: true },
   connected: { color: '#10b981', label: 'Connected', pulse: false },

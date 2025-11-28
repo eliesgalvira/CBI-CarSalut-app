@@ -81,6 +81,9 @@ export function useBLE() {
   const scanTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scanRetryCountRef = useRef(0);
   const isScanningRef = useRef(false); // Track if we're in a scan operation
+  
+  // Deferred to wait for disconnect to complete
+  const disconnectCompleteRef = useRef<Deferred<void, Error> | null>(null);
 
   // Initialize BLE Manager
   useEffect(() => {
@@ -477,24 +480,48 @@ export function useBLE() {
       return;
     }
 
-    // Prevent multiple concurrent scan operations
+    // CRITICAL: Prevent multiple concurrent scan operations
+    // This check MUST happen synchronously before any await
     if (isScanningRef.current) {
       console.log('[BLE] Scan already in progress, ignoring');
       return;
     }
 
-    // Reset flags
+    // IMMEDIATELY set the flag and state BEFORE any async operations
+    // This prevents multiple button presses from queuing up scans
+    isScanningRef.current = true;
+    setState((prev) => ({
+      ...prev,
+      status: 'preparing',
+      error: null,
+    }));
+    console.log('[BLE] Set preparing state synchronously');
+
+    // Now we can safely do async work - button is already disabled
+    // IMPORTANT: Wait for any pending disconnect to complete
+    // This prevents the "Cannot start scanning operation" error
+    if (disconnectCompleteRef.current) {
+      console.log('[BLE] Waiting for pending disconnect to complete...');
+      try {
+        await disconnectCompleteRef.current.promise;
+        console.log('[BLE] Disconnect completed, proceeding with scan');
+      } catch (e) {
+        console.log('[BLE] Disconnect wait error (ignored):', e);
+      }
+    }
+
+    // Reset other flags (isScanningRef already set above)
     console.log('[BLE] Resetting flags - isDisconnecting was:', isDisconnectingRef.current);
     isDisconnectingRef.current = false;
     isReconnectingRef.current = false;
     reconnectAttemptsRef.current = 0;
     scanRetryCountRef.current = 0;
-    isScanningRef.current = true;
 
     const hasPermissions = await requestPermissions();
     if (!hasPermissions) {
       console.log('[BLE] Permissions not granted');
       isScanningRef.current = false;
+      setState((prev) => ({ ...prev, status: 'idle' }));
       return;
     }
 
@@ -504,6 +531,7 @@ export function useBLE() {
     if (bleState !== State.PoweredOn) {
       setState((prev) => ({
         ...prev,
+        status: 'idle',
         error: 'Please turn on Bluetooth',
       }));
       isScanningRef.current = false;
@@ -674,6 +702,11 @@ export function useBLE() {
   const disconnect = useCallback(async () => {
     console.log('[BLE] disconnect called');
     
+    // Create a Deferred that will resolve when disconnect is fully complete
+    // This allows startScan to wait for it
+    const disconnectComplete = new Deferred<void, Error>();
+    disconnectCompleteRef.current = disconnectComplete;
+    
     // Set flag to prevent reconnection attempts
     isDisconnectingRef.current = true;
     reconnectAttemptsRef.current = MAX_RECONNECT_ATTEMPTS;
@@ -715,13 +748,15 @@ export function useBLE() {
     // Reset state immediately
     setState(initialState);
     
-    // Reset the disconnecting flag after a longer delay to let BLE stack fully settle
+    // Wait for BLE stack to fully settle, then resolve the Deferred
     console.log('[BLE] Waiting for BLE stack to settle...');
     setTimeout(() => {
-      console.log('[BLE] isDisconnectingRef reset to false');
+      console.log('[BLE] Disconnect fully complete');
       isDisconnectingRef.current = false;
       isReconnectingRef.current = false;
-    }, 1000);
+      disconnectComplete.resolve();
+      disconnectCompleteRef.current = null;
+    }, 1500); // Increased to 1.5s for more reliable settling
   }, []);
 
   // Select a characteristic to subscribe to
