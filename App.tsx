@@ -9,7 +9,7 @@ import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-cont
 import { useBLE } from './src/hooks/useBLE';
 import {
   StatusIndicator,
-  CounterDisplay,
+  BatteryIndicator,
   ActionButton,
 } from './src/components';
 
@@ -35,6 +35,10 @@ function AppContent() {
   const isConnected = status === 'connected';
   const isConnecting = status === 'connecting';
 
+  // Extract battery percentage from heartbeat data
+  // The ESP32 sends "XX%" format, so we parse out the number
+  const batteryPercentage = heartbeat?.counter ?? 100;
+
   return (
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       <StatusBar barStyle="light-content" backgroundColor="#0a0a0f" />
@@ -57,9 +61,9 @@ function AppContent() {
         )}
       </View>
 
-      {/* Counter Display */}
-      <View style={styles.counterSection}>
-        <CounterDisplay heartbeat={heartbeat} />
+      {/* Battery Indicator */}
+      <View style={styles.batterySection}>
+        <BatteryIndicator percentage={batteryPercentage} />
       </View>
 
       {/* Error Display */}
@@ -170,7 +174,7 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     fontWeight: '500',
   },
-  counterSection: {
+  batterySection: {
     flex: 1,
     justifyContent: 'center',
     minHeight: 250,

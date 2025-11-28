@@ -19,6 +19,10 @@ const TARGET_DEVICE_NAME = 'CarTag';
 const RECONNECT_DELAY = 3000;
 const MAX_RECONNECT_ATTEMPTS = 5;
 
+// UUIDs matching the ESP32 firmware
+const SERVICE_UUID = '4fafc201-1fb5-459e-8fcc-c5c9c331914b';
+const CHARACTERISTIC_UUID = 'beb5483e-36e1-4688-b7f5-ea07361b26a8';
+
 const initialState: BLEState = {
   status: 'idle',
   deviceName: null,
@@ -255,6 +259,7 @@ export function useBLE() {
       }
 
       try {
+        console.log('Subscribing to characteristic:', characteristic.uuid);
         const subscription = device.monitorCharacteristicForService(
           characteristic.serviceUUID,
           characteristic.uuid,
@@ -265,7 +270,9 @@ export function useBLE() {
             }
 
             if (char?.value) {
+              console.log('Received BLE data:', char.value);
               const heartbeat = parseHeartbeatData(char.value);
+              console.log('Parsed heartbeat:', heartbeat);
               if (heartbeat) {
                 setState((prev) => ({
                   ...prev,
@@ -295,14 +302,32 @@ export function useBLE() {
   // Auto-subscribe to first notifiable characteristic
   const autoSubscribe = useCallback(
     async (device: Device, services: DiscoveredService[]) => {
+      console.log('Auto-subscribing, found services:', services.map(s => s.uuid));
+      
+      // First, try to find our specific characteristic
+      for (const service of services) {
+        if (service.uuid.toLowerCase() === SERVICE_UUID.toLowerCase()) {
+          for (const char of service.characteristics) {
+            if (char.uuid.toLowerCase() === CHARACTERISTIC_UUID.toLowerCase() && char.isNotifiable) {
+              console.log('Found target characteristic:', char.uuid);
+              await subscribeToCharacteristic(device, char);
+              return true;
+            }
+          }
+        }
+      }
+      
+      // Fallback: subscribe to first notifiable characteristic
       for (const service of services) {
         for (const char of service.characteristics) {
           if (char.isNotifiable) {
+            console.log('Using fallback characteristic:', char.uuid);
             await subscribeToCharacteristic(device, char);
             return true;
           }
         }
       }
+      console.log('No notifiable characteristic found');
       return false;
     },
     [subscribeToCharacteristic]
