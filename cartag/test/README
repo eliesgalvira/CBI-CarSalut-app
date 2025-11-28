@@ -1,0 +1,7 @@
+
+This directory is intended for PlatformIO Test Runner and target testing.
+
+Target specific test cases are recommended to be located in this directory.
+
+Check the official documentation https://docs.platformio.org/page/testing/index.html
+for more information on how to use PlatformIO Test Runner.
