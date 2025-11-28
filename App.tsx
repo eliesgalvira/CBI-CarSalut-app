@@ -15,6 +15,7 @@ import {
 
 // Store for last received battery percentage (will be moved to Convex DB later)
 let lastReceivedBatteryPercentage: number | null = null;
+let lastReceivedTimestamp: Date | null = null;
 
 function AppContent() {
   const insets = useSafeAreaInsets();
@@ -29,8 +30,9 @@ function AppContent() {
     requestPermissions,
   } = useBLE();
 
-  // Local state for battery percentage
+  // Local state for battery percentage and timestamp
   const [batteryPercentage, setBatteryPercentage] = useState<number | null>(lastReceivedBatteryPercentage);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(lastReceivedTimestamp);
 
   // Request permissions on mount
   useEffect(() => {
@@ -41,11 +43,16 @@ function AppContent() {
   useEffect(() => {
     if (heartbeat?.counter !== undefined && heartbeat.counter !== null) {
       const newPercentage = heartbeat.counter;
+      const newTimestamp = heartbeat.timestamp;
+      
       setBatteryPercentage(newPercentage);
-      // Store in module-level variable (will be Convex DB later)
+      setLastUpdated(newTimestamp);
+      
+      // Store in module-level variables (will be Convex DB later)
       lastReceivedBatteryPercentage = newPercentage;
+      lastReceivedTimestamp = newTimestamp;
     }
-  }, [heartbeat?.counter]);
+  }, [heartbeat?.counter, heartbeat?.timestamp]);
 
   const isScanning = status === 'scanning';
   const isConnected = status === 'connected';
@@ -75,7 +82,7 @@ function AppContent() {
 
       {/* Battery Indicator */}
       <View style={styles.batterySection}>
-        <BatteryIndicator percentage={batteryPercentage} />
+        <BatteryIndicator percentage={batteryPercentage} lastUpdated={lastUpdated} />
       </View>
 
       {/* Error Display */}

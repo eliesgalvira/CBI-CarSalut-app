@@ -14,6 +14,7 @@ const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 interface BatteryIndicatorProps {
   percentage: number | null;
+  lastUpdated: Date | null;
   size?: number;
   strokeWidth?: number;
 }
@@ -36,12 +37,26 @@ const getStatusText = (pct: number) => {
 
 export function BatteryIndicator({
   percentage,
+  lastUpdated,
   size = 200,
   strokeWidth = 12,
 }: BatteryIndicatorProps) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const center = size / 2;
+
+  // Format date to full date with seconds
+  const formatDateTime = (date: Date) => {
+    return date.toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    });
+  };
 
   // State for displaying the animated percentage text
   const [displayValue, setDisplayValue] = useState<number>(percentage ?? 0);
@@ -158,6 +173,14 @@ export function BatteryIndicator({
           </Text>
         </View>
       )}
+      
+      {/* Last Updated */}
+      <View style={styles.lastUpdatedContainer}>
+        <Text style={styles.lastUpdatedLabel}>LAST UPDATED</Text>
+        <Text style={styles.lastUpdatedValue}>
+          {lastUpdated ? formatDateTime(lastUpdated) : '—'}
+        </Text>
+      </View>
     </View>
   );
 }
@@ -219,5 +242,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#64748b',
     textAlign: 'center',
+  },
+  lastUpdatedContainer: {
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  lastUpdatedLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#64748b',
+    letterSpacing: 2,
+    marginBottom: 4,
+  },
+  lastUpdatedValue: {
+    fontSize: 14,
+    color: '#94a3b8',
+    fontVariant: ['tabular-nums'],
   },
 });
