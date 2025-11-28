@@ -21,11 +21,21 @@ BLECharacteristic* pCharacteristic = NULL;
 bool deviceConnected = false;
 bool oldDeviceConnected = false;
 
+// Battery simulation variables
+int batteryLevel = 100;
+int updateCount = 0;
+unsigned long lastUpdateTime = 0;
+const unsigned long UPDATE_INTERVAL = 2000;  // 2 seconds
+
 // Callback class to handle connection events
 class MyServerCallbacks : public BLEServerCallbacks {
-    void onConnect(BLEServer* pServer) {
+    void onConnect(BLEServer* pServer, esp_ble_gatts_cb_param_t *param) {
         deviceConnected = true;
         Serial.println("Device connected");
+        
+        // Update connection parameters for stability
+        // min interval, max interval, latency, timeout (in units of 1.25ms, 1.25ms, intervals, 10ms)
+        pServer->updateConnParams(param->connect.remote_bda, 24, 48, 0, 400);
     }
 
     void onDisconnect(BLEServer* pServer) {
@@ -71,12 +81,13 @@ void setup() {
         CHARACTERISTIC_UUID,
         BLECharacteristic::PROPERTY_READ   |
         BLECharacteristic::PROPERTY_WRITE  |
-        BLECharacteristic::PROPERTY_NOTIFY |
-        BLECharacteristic::PROPERTY_INDICATE
+        BLECharacteristic::PROPERTY_NOTIFY
     );
 
-    // Add descriptor for notifications
-    pCharacteristic->addDescriptor(new BLE2902());
+    // Add descriptor for notifications - this is required for clients to enable notifications
+    BLE2902* pDescriptor = new BLE2902();
+    pDescriptor->setNotifications(true);
+    pCharacteristic->addDescriptor(pDescriptor);
     
     // Set callbacks for write events
     pCharacteristic->setCallbacks(new MyCallbacks());
@@ -116,10 +127,27 @@ void loop() {
     
     // If connected, you can send notifications
     if (deviceConnected) {
-        // Example: send a heartbeat or sensor data every second
-        // pCharacteristic->setValue("heartbeat");
-        // pCharacteristic->notify();
-        // delay(1000);
+        unsigned long currentTime = millis();
+        
+        // Send battery update every 2 seconds
+        if (currentTime - lastUpdateTime >= UPDATE_INTERVAL) {
+            lastUpdateTime = currentTime;
+            updateCount++;
+            
+            // Decrease battery by 1% every 3 updates
+            if (updateCount >= 3 && batteryLevel > 0) {
+                batteryLevel--;
+                updateCount = 0;
+            }
+            
+            // Send battery level as string
+            String batteryStr = String(batteryLevel) + "%";
+            pCharacteristic->setValue(batteryStr.c_str());
+            pCharacteristic->notify();
+            
+            Serial.print("Battery level: ");
+            Serial.println(batteryStr);
+        }
     }
     
     delay(10);  // Small delay to prevent watchdog issues

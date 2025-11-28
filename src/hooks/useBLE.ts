@@ -36,6 +36,8 @@ export function useBLE() {
   const reconnectAttemptsRef = useRef(0);
   const isReconnectingRef = useRef(false);
   const subscriptionRef = useRef<{ remove: () => void } | null>(null);
+  const disconnectListenerRef = useRef<{ remove: () => void } | null>(null);
+  const isDisconnectingRef = useRef(false);
 
   // Initialize BLE Manager
   useEffect(() => {
@@ -53,6 +55,8 @@ export function useBLE() {
 
     return () => {
       subscription.remove();
+      disconnectListenerRef.current?.remove();
+      disconnectListenerRef.current = null;
       // Don't call subscriptionRef.current?.remove() - just clear it
       subscriptionRef.current = null;
       managerRef.current?.destroy();
@@ -307,6 +311,11 @@ export function useBLE() {
   // Connect to device
   const connectToDevice = useCallback(
     async (device: Device) => {
+      // Don't connect if we're already connected or in the process of disconnecting
+      if (isDisconnectingRef.current) {
+        return null;
+      }
+
       try {
         setState((prev) => ({
           ...prev,
@@ -314,12 +323,21 @@ export function useBLE() {
           error: null,
         }));
 
+        // Remove any existing disconnect listener
+        disconnectListenerRef.current?.remove();
+        disconnectListenerRef.current = null;
+
         const connectedDevice = await device.connect();
         deviceRef.current = connectedDevice;
 
-        // Monitor disconnection
-        connectedDevice.onDisconnected((error, disconnectedDevice) => {
-          console.log('Device disconnected:', disconnectedDevice?.name, error);
+        // Monitor disconnection - store the subscription
+        const disconnectSubscription = connectedDevice.onDisconnected((error, disconnectedDevice) => {
+          // Ignore if we initiated the disconnect
+          if (isDisconnectingRef.current) {
+            return;
+          }
+
+          console.log('Device disconnected:', disconnectedDevice?.name, error?.message);
 
           // Clear subscription ref without calling remove (avoid crash)
           subscriptionRef.current = null;
@@ -330,19 +348,21 @@ export function useBLE() {
             selectedCharacteristic: null,
           }));
 
-          // Attempt reconnection
-          if (!isReconnectingRef.current && reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
+          // Attempt reconnection only if not manually disconnecting
+          if (!isDisconnectingRef.current && !isReconnectingRef.current && reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
             isReconnectingRef.current = true;
             reconnectAttemptsRef.current++;
 
             setTimeout(() => {
               isReconnectingRef.current = false;
-              if (deviceRef.current) {
+              if (deviceRef.current && !isDisconnectingRef.current) {
                 connectToDevice(deviceRef.current);
               }
             }, RECONNECT_DELAY);
           }
         });
+
+        disconnectListenerRef.current = disconnectSubscription;
 
         // Discover services
         const services = await discoverServices(connectedDevice);
@@ -442,11 +462,15 @@ export function useBLE() {
 
   // Disconnect from device
   const disconnect = useCallback(async () => {
-    // Prevent auto-reconnect first
+    // Set flag to prevent reconnection attempts
+    isDisconnectingRef.current = true;
     reconnectAttemptsRef.current = MAX_RECONNECT_ATTEMPTS;
     
+    // Remove disconnect listener
+    disconnectListenerRef.current?.remove();
+    disconnectListenerRef.current = null;
+    
     // Clear the subscription reference without calling remove()
-    // The subscription will be cleaned up when the connection is cancelled
     subscriptionRef.current = null;
 
     if (deviceRef.current) {
@@ -459,6 +483,12 @@ export function useBLE() {
     }
 
     deviceRef.current = null;
+    
+    // Reset the disconnecting flag after a short delay
+    setTimeout(() => {
+      isDisconnectingRef.current = false;
+    }, 500);
+    
     setState(initialState);
   }, []);
 
