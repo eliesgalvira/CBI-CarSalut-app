@@ -52,6 +52,7 @@ unset ANDROID_SDK_ROOT  # Remove conflicting variable if set
 
 # Initialize ADB (ensure device is connected and authorized)
 which adb && adb devices
+# Note: restart adb daemon with `adb kill-server` and then `adb devices`
 
 # Install dependencies (patch-package runs automatically via postinstall)
 npm install
