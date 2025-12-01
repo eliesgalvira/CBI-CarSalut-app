@@ -6,6 +6,13 @@ import { NFCState, NFCStatus, NFCTagInfo } from '../types';
 // Dummy message to write to NFC tag
 const DUMMY_MESSAGE = 'Hello the key is VALIDATED';
 
+// Timeout for NFC scan (15 seconds)
+const SCAN_TIMEOUT = 15000;
+
+// Retry settings for write operations
+const WRITE_RETRY_COUNT = 2;
+const WRITE_RETRY_DELAY = 100; // ms
+
 // Logging helper - verbose in dev, minimal in production
 const log = {
   debug: (...args: unknown[]) => __DEV__ && console.log('[NFC]', ...args),
@@ -62,7 +69,9 @@ export function useNFC() {
   // Refs to prevent race conditions
   const isScanningRef = useRef(false);
   const isWritingRef = useRef(false);
+  const didTimeoutRef = useRef(false);
   const scanCompleteRef = useRef<Deferred<void, Error> | null>(null);
+  const scanTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Initialize NFC Manager and check support
   useEffect(() => {
@@ -207,8 +216,29 @@ export function useNFC() {
 
       log.info('Waiting for NFC tag...');
 
+      // Reset timeout flag
+      didTimeoutRef.current = false;
+
+      // Set up timeout - will cancel the NFC request if no tag detected
+      scanTimeoutRef.current = setTimeout(async () => {
+        log.debug('Scan timeout reached, cancelling...');
+        didTimeoutRef.current = true;
+        try {
+          await NfcManager.cancelTechnologyRequest();
+        } catch (e) {
+          // Ignore
+        }
+      }, SCAN_TIMEOUT);
+
       // Request NFC technology - this waits for a tag to be tapped
+      // If timeout fires, cancelTechnologyRequest() will cause this to throw
       await NfcManager.requestTechnology(NfcTech.Ndef);
+
+      // Clear timeout since tag was detected
+      if (scanTimeoutRef.current) {
+        clearTimeout(scanTimeoutRef.current);
+        scanTimeoutRef.current = null;
+      }
       
       log.debug('Tag detected, reading...');
 
@@ -237,23 +267,37 @@ export function useNFC() {
       scanComplete.resolve();
     } catch (error) {
       log.warn('NFC scan error:', error);
+
+      // Clear timeout if it's still pending
+      if (scanTimeoutRef.current) {
+        clearTimeout(scanTimeoutRef.current);
+        scanTimeoutRef.current = null;
+      }
       
-      // Check if it was user cancellation
+      // Check error type
       const errorMessage = error instanceof Error ? error.message : String(error);
       const isCancelled = errorMessage.includes('cancelled') || 
                           errorMessage.includes('canceled') ||
                           errorMessage.includes('user');
 
-      if (!isCancelled) {
+      if (didTimeoutRef.current) {
+        // Timeout triggered the cancellation
         setState((prev) => ({
           ...prev,
-          status: 'error',
-          error: 'Failed to read NFC tag. Please try again.',
+          status: 'idle',
+          error: 'No NFC tag detected. Please try again.',
+        }));
+      } else if (isCancelled) {
+        // User cancelled
+        setState((prev) => ({
+          ...prev,
+          status: 'idle',
         }));
       } else {
         setState((prev) => ({
           ...prev,
-          status: 'idle',
+          status: 'error',
+          error: 'Failed to read NFC tag. Please try again.',
         }));
       }
 
@@ -291,24 +335,42 @@ export function useNFC() {
         Ndef.textRecord(DUMMY_MESSAGE),
       ]);
 
-      if (bytes) {
-        await NfcManager.ndefHandler.writeNdefMessage(bytes);
-        log.info('Successfully wrote message to NFC tag');
-
-        setState((prev) => ({
-          ...prev,
-          status: 'connected',
-          lastMessage: DUMMY_MESSAGE,
-        }));
-      } else {
+      if (!bytes) {
         throw new Error('Failed to encode NDEF message');
       }
+
+      // Retry logic for write operations (tag may need time to stabilize)
+      let lastError: Error | null = null;
+      for (let attempt = 0; attempt <= WRITE_RETRY_COUNT; attempt++) {
+        try {
+          if (attempt > 0) {
+            log.debug(`Write retry attempt ${attempt}/${WRITE_RETRY_COUNT}`);
+            // Small delay before retry
+            await new Promise(resolve => setTimeout(resolve, WRITE_RETRY_DELAY));
+          }
+          await NfcManager.ndefHandler.writeNdefMessage(bytes);
+          log.info('Successfully wrote message to NFC tag');
+
+          setState((prev) => ({
+            ...prev,
+            status: 'connected',
+            lastMessage: DUMMY_MESSAGE,
+          }));
+          return; // Success, exit
+        } catch (e) {
+          lastError = e instanceof Error ? e : new Error(String(e));
+          log.warn(`Write attempt ${attempt + 1} failed:`, lastError.message);
+        }
+      }
+
+      // All retries failed
+      throw lastError || new Error('Failed to write to NFC tag');
     } catch (error) {
       log.error('Failed to write to NFC tag:', error);
       setState((prev) => ({
         ...prev,
         status: 'error',
-        error: 'Failed to write to NFC tag',
+        error: 'Failed to write to NFC tag. Keep the tag close and try again.',
       }));
     } finally {
       isWritingRef.current = false;
@@ -318,6 +380,12 @@ export function useNFC() {
   // Stop scanning
   const stopScan = useCallback(async () => {
     log.debug('stopScan called');
+
+    // Clear timeout
+    if (scanTimeoutRef.current) {
+      clearTimeout(scanTimeoutRef.current);
+      scanTimeoutRef.current = null;
+    }
     
     try {
       await NfcManager.cancelTechnologyRequest();

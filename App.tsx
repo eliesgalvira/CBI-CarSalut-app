@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, View, Text } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { CarTagScreen, NFCScreen } from './src/screens';
@@ -24,19 +24,22 @@ function NFCIcon({ color }: { color: string }) {
   );
 }
 
-export default function App() {
+function AppNavigator() {
+  const insets = useSafeAreaInsets();
+
   return (
-    <SafeAreaProvider>
-      <NavigationContainer>
-        <Tab.Navigator
-          screenOptions={{
-            headerShown: false,
-            tabBarStyle: styles.tabBar,
-            tabBarActiveTintColor: '#6366f1',
-            tabBarInactiveTintColor: '#64748b',
-            tabBarLabelStyle: styles.tabBarLabel,
-          }}
-        >
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: [
+          styles.tabBar,
+          { paddingBottom: Math.max(insets.bottom, 8), height: 60 + insets.bottom },
+        ],
+        tabBarActiveTintColor: '#6366f1',
+        tabBarInactiveTintColor: '#64748b',
+        tabBarLabelStyle: styles.tabBarLabel,
+      }}
+    >
           <Tab.Screen
             name="CarTag"
             component={CarTagScreen}
@@ -51,7 +54,15 @@ export default function App() {
               tabBarIcon: ({ color }) => <NFCIcon color={color} />,
             }}
           />
-        </Tab.Navigator>
+    </Tab.Navigator>
+  );
+}
+
+export default function App() {
+  return (
+    <SafeAreaProvider>
+      <NavigationContainer>
+        <AppNavigator />
       </NavigationContainer>
     </SafeAreaProvider>
   );
@@ -63,8 +74,6 @@ const styles = StyleSheet.create({
     borderTopColor: 'rgba(255, 255, 255, 0.1)',
     borderTopWidth: 1,
     paddingTop: 8,
-    paddingBottom: 8,
-    height: 60,
   },
   tabBarLabel: {
     fontSize: 12,
