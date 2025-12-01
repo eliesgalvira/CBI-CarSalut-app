@@ -36,10 +36,14 @@
         "react-native-ble-plx",
         {
           "isBackgroundEnabled": false,
-          "modes": ["peripheral", "central"],
+          "modes": [
+            "peripheral",
+            "central"
+          ],
           "bluetoothAlwaysPermission": "This app uses Bluetooth to connect to CarSalut device."
         }
-      ]
+      ],
+      "react-native-nfc-manager"
     ]
   }
 }

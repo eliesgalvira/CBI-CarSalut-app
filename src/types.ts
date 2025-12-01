@@ -29,3 +29,21 @@ export interface BLEState {
   selectedCharacteristic: DiscoveredCharacteristic | null;
 }
 
+// ========== NFC Types ==========
+
+export type NFCStatus = 'idle' | 'checking' | 'scanning' | 'connected' | 'writing' | 'error';
+
+export interface NFCTagInfo {
+  id: string;
+  techTypes: string[];
+}
+
+export interface NFCState {
+  status: NFCStatus;
+  isSupported: boolean;
+  isEnabled: boolean;
+  tagInfo: NFCTagInfo | null;
+  lastMessage: string | null;
+  error: string | null;
+}
+
