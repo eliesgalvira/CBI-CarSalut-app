@@ -6,6 +6,13 @@ import { NFCState, NFCStatus, NFCTagInfo } from '../types';
 // Timeout for NFC scan (15 seconds)
 const SCAN_TIMEOUT = 15000;
 
+// ============================================
+// HARDCODED NFC WRITE MESSAGE
+// Change this value to write different messages to tags
+// Valid values for Race mode: "1", "2", "3"
+// ============================================
+const NFC_WRITE_MESSAGE = '1';
+
 // Retry settings for write operations
 const WRITE_RETRY_COUNT = 2;
 const WRITE_RETRY_DELAY = 100; // ms
@@ -69,7 +76,6 @@ export function useNFC() {
   const didTimeoutRef = useRef(false);
   const scanCompleteRef = useRef<Deferred<void, Error> | null>(null);
   const scanTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const writeCounterRef = useRef(0);
 
   // Initialize NFC Manager and check support
   useEffect(() => {
@@ -325,9 +331,8 @@ export function useNFC() {
       status: 'writing',
     }));
 
-    // Increment counter and create message
-    writeCounterRef.current += 1;
-    const message = `Validate ${writeCounterRef.current}`;
+    // Use hardcoded message
+    const message = NFC_WRITE_MESSAGE;
 
     try {
       log.debug('Writing message to tag:', message);
@@ -379,6 +384,157 @@ export function useNFC() {
     }
   }, []);
 
+  // Read message from NFC tag (without writing)
+  const readTag = useCallback(async (): Promise<string | null> => {
+    log.debug('readTag called');
+
+    // Prevent concurrent scans
+    if (isScanningRef.current) {
+      log.debug('Scan already in progress, ignoring');
+      return null;
+    }
+
+    // Immediately set flag and state
+    isScanningRef.current = true;
+    setState((prev) => ({
+      ...prev,
+      status: 'checking',
+      error: null,
+      tagInfo: null,
+      lastMessage: null,
+    }));
+
+    // Check permissions/enabled state
+    const hasPermissions = await requestPermissions();
+    if (!hasPermissions) {
+      isScanningRef.current = false;
+      setState((prev) => ({
+        ...prev,
+        status: 'idle',
+      }));
+      return null;
+    }
+
+    try {
+      setState((prev) => ({
+        ...prev,
+        status: 'scanning',
+      }));
+
+      log.info('Waiting for NFC tag (read only)...');
+
+      // Reset timeout flag
+      didTimeoutRef.current = false;
+
+      // Set up timeout
+      scanTimeoutRef.current = setTimeout(async () => {
+        log.debug('Read timeout reached, cancelling...');
+        didTimeoutRef.current = true;
+        try {
+          await NfcManager.cancelTechnologyRequest();
+        } catch (e) {
+          // Ignore
+        }
+      }, SCAN_TIMEOUT);
+
+      // Request NFC technology
+      await NfcManager.requestTechnology(NfcTech.Ndef);
+
+      // Clear timeout since tag was detected
+      if (scanTimeoutRef.current) {
+        clearTimeout(scanTimeoutRef.current);
+        scanTimeoutRef.current = null;
+      }
+      
+      log.debug('Tag detected, reading message...');
+
+      // Get tag info
+      const tag = await NfcManager.getTag();
+      log.debug('Tag info:', tag);
+
+      let readMessage: string | null = null;
+
+      if (tag) {
+        const tagInfo: NFCTagInfo = {
+          id: tag.id || 'unknown',
+          techTypes: tag.techTypes || [],
+        };
+
+        // Parse NDEF message if present
+        if (tag.ndefMessage && tag.ndefMessage.length > 0) {
+          try {
+            const firstRecord = tag.ndefMessage[0];
+            // Try to decode as text record
+            if (firstRecord.payload && firstRecord.payload.length > 0) {
+              // Text record format: [status byte (language code length)][language code][text]
+              const payload = firstRecord.payload;
+              const languageCodeLength = payload[0] & 0x3f;
+              const textBytes = payload.slice(1 + languageCodeLength);
+              readMessage = String.fromCharCode(...textBytes);
+              log.info('Read message from tag:', readMessage);
+            }
+          } catch (parseError) {
+            log.warn('Failed to parse NDEF message:', parseError);
+          }
+        }
+
+        setState((prev) => ({
+          ...prev,
+          status: 'connected',
+          tagInfo,
+          lastMessage: readMessage,
+        }));
+
+        log.info('NFC tag read complete:', tagInfo.id);
+      }
+
+      return readMessage;
+    } catch (error) {
+      log.warn('NFC read error:', error);
+
+      // Clear timeout if it's still pending
+      if (scanTimeoutRef.current) {
+        clearTimeout(scanTimeoutRef.current);
+        scanTimeoutRef.current = null;
+      }
+      
+      // Check error type
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const isCancelled = errorMessage.includes('cancelled') || 
+                          errorMessage.includes('canceled') ||
+                          errorMessage.includes('user');
+
+      if (didTimeoutRef.current) {
+        setState((prev) => ({
+          ...prev,
+          status: 'idle',
+          error: 'No NFC tag detected. Please try again.',
+        }));
+      } else if (isCancelled) {
+        setState((prev) => ({
+          ...prev,
+          status: 'idle',
+        }));
+      } else {
+        setState((prev) => ({
+          ...prev,
+          status: 'error',
+          error: 'Failed to read NFC tag. Please try again.',
+        }));
+      }
+
+      return null;
+    } finally {
+      // Always cleanup
+      try {
+        await NfcManager.cancelTechnologyRequest();
+      } catch (e) {
+        log.debug('Cancel technology request error (ignored):', e);
+      }
+      isScanningRef.current = false;
+    }
+  }, [requestPermissions]);
+
   // Stop scanning
   const stopScan = useCallback(async () => {
     log.debug('stopScan called');
@@ -419,6 +575,7 @@ export function useNFC() {
     ...state,
     startScan,
     stopScan,
+    readTag,
     reset,
     requestPermissions,
   };

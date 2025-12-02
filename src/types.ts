@@ -47,3 +47,23 @@ export interface NFCState {
   error: string | null;
 }
 
+// ========== RC Car Racing Types ==========
+
+export interface RCCarProfile {
+  id: string;
+  name: string;
+  // Performance stats
+  avgSpeed: number;      // km/h
+  maxSpeed: number;      // km/h
+  avgRPM: number;        // RPM
+  maxRPM: number;        // RPM
+  // Condition indicators
+  batteryDrain: number;  // percentage per race (0-100)
+  motorTemp: number;     // °C
+  tireWear: number;      // percentage (0-100, higher = more wear)
+  // Timing
+  bestLapTime: number;   // seconds
+  // Calculated strain factor (0-100, higher = more strain on car)
+  strainFactor: number;
+}
+
