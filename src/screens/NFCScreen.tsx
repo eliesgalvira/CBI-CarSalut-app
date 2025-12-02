@@ -133,7 +133,7 @@ export function NFCScreen() {
 
       {/* Action Buttons */}
       <View style={styles.buttonContainer}>
-        {!isConnected && !isWriting && (
+        {!isConnected && !isWriting && !hasError && (
           <ActionButton
             label={isScanning ? 'Cancel' : 'Scan for Tag'}
             onPress={() => {
