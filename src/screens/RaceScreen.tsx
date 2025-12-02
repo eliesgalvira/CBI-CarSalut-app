@@ -73,11 +73,13 @@ export function RaceScreen() {
   const [phase, setPhase] = useState<RacePhase>('idle');
   const [loadedProfile, setLoadedProfile] = useState<RCCarProfile | null>(null);
   const [finalTime, setFinalTime] = useState<string>('');
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Health is calculated as 100 - strainFactor
   const healthPercentage = loadedProfile ? 100 - loadedProfile.strainFactor : null;
 
   const handleSync = useCallback(async () => {
+    setIsSyncing(true);
     const message = await nfc.readTag();
     
     if (message && RC_CAR_PROFILES[message.trim()]) {
@@ -88,6 +90,7 @@ export function RaceScreen() {
       // Tag was read but message doesn't match a profile
       nfc.reset();
     }
+    setIsSyncing(false);
   }, [nfc]);
 
   const handleStart = useCallback(() => {
@@ -178,11 +181,11 @@ export function RaceScreen() {
       <View style={styles.buttonContainer}>
         {phase === 'idle' && (
           <ActionButton
-            label={nfc.status === 'scanning' ? 'Scanning...' : 'Sync Car Tag'}
+            label={isSyncing ? 'Syncing...' : 'Sync Car Tag'}
             onPress={handleSync}
             variant="primary"
-            loading={nfc.status === 'scanning' || nfc.status === 'checking'}
-            disabled={!nfc.isSupported || !nfc.isEnabled}
+            loading={isSyncing}
+            disabled={!nfc.isSupported || !nfc.isEnabled || isSyncing}
           />
         )}
 
