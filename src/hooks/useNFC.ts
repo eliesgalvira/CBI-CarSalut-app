@@ -3,9 +3,6 @@ import { Platform, PermissionsAndroid } from 'react-native';
 import NfcManager, { NfcTech, Ndef, NfcEvents } from 'react-native-nfc-manager';
 import { NFCState, NFCStatus, NFCTagInfo } from '../types';
 
-// Dummy message to write to NFC tag
-const DUMMY_MESSAGE = 'Hello the key is VALIDATED';
-
 // Timeout for NFC scan (15 seconds)
 const SCAN_TIMEOUT = 15000;
 
@@ -72,6 +69,7 @@ export function useNFC() {
   const didTimeoutRef = useRef(false);
   const scanCompleteRef = useRef<Deferred<void, Error> | null>(null);
   const scanTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const writeCounterRef = useRef(0);
 
   // Initialize NFC Manager and check support
   useEffect(() => {
@@ -327,12 +325,16 @@ export function useNFC() {
       status: 'writing',
     }));
 
+    // Increment counter and create message
+    writeCounterRef.current += 1;
+    const message = `Validate ${writeCounterRef.current}`;
+
     try {
-      log.debug('Writing message to tag:', DUMMY_MESSAGE);
+      log.debug('Writing message to tag:', message);
 
       // Create NDEF message with text record
       const bytes = Ndef.encodeMessage([
-        Ndef.textRecord(DUMMY_MESSAGE),
+        Ndef.textRecord(message),
       ]);
 
       if (!bytes) {
@@ -354,7 +356,7 @@ export function useNFC() {
           setState((prev) => ({
             ...prev,
             status: 'connected',
-            lastMessage: DUMMY_MESSAGE,
+            lastMessage: message,
           }));
           return; // Success, exit
         } catch (e) {
