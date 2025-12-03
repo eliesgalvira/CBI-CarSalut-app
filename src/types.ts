@@ -67,3 +67,22 @@ export interface RCCarProfile {
   strainFactor: number;
 }
 
+// ========== OBD Types ==========
+
+export interface OBDData {
+  rpm: number | null;           // Engine RPM (0-8000+)
+  speed: number | null;         // Vehicle speed in km/h
+  coolantTemp: number | null;   // Engine coolant temperature in °C
+  engineLoad: number | null;    // Engine load percentage (0-100)
+  timestamp: Date;
+}
+
+export interface OBDState {
+  status: ConnectionStatus;
+  deviceName: string | null;
+  deviceId: string | null;
+  obdData: OBDData | null;
+  error: string | null;
+  isPolling: boolean;
+}
+
