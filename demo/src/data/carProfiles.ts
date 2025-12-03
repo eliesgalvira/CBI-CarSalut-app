@@ -49,12 +49,29 @@ export const CAR_PROFILES: CarProfile[] = [
     initialHealth: 65,
     verifiedHistory: 55,
   },
+  {
+    id: 'cupra-born-2023',
+    name: 'CUPRA BORN 2023',
+    brand: 'CUPRA',
+    model: 'Born',
+    year: 2023,
+    fullModel: 'e-BOOST 231 CV 2023',
+    registerDate: '22.09.2023',
+    kilometers: 12340,
+    fuelType: 'Electric',
+    gearType: 'Automatic',
+    power: '231 CV / 170KW',
+    traction: 'Front',
+    initialHealth: 94,
+    verifiedHistory: 98,
+  },
 ];
 
 export const NFC_TAG_TO_CAR: Record<string, string> = {
   '1': 'seat-ibiza-2020',
   '2': 'cupra-formentor-2022',
   '3': 'seat-leon-2019',
+  '4': 'cupra-born-2023',
 };
 
 export function getInitialMetrics(health: number): HealthMetrics {

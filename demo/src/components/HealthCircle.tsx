@@ -32,7 +32,9 @@ export function HealthCircle({
   const center = size / 2;
 
   useEffect(() => {
-    progress.value = withTiming(percentage / 100, {
+    // Clamp percentage between 0 and 100
+    const clampedPercentage = Math.min(100, Math.max(0, percentage));
+    progress.value = withTiming(clampedPercentage / 100, {
       duration: 1000,
       easing: Easing.bezierFn(0.25, 0.1, 0.25, 1),
     });
@@ -48,6 +50,9 @@ export function HealthCircle({
     if (percentage >= 50) return '#F59E0B'; // Amber
     return '#EF4444'; // Red
   };
+
+  // Use explicit strokeDasharray value
+  const dashArray = `${circumference} ${circumference}`;
 
   return (
     <View style={[styles.container, { width: size, height: size }]}>
@@ -77,7 +82,7 @@ export function HealthCircle({
           stroke="url(#healthGradient)"
           strokeWidth={strokeWidth}
           fill="none"
-          strokeDasharray={circumference}
+          strokeDasharray={dashArray}
           animatedProps={animatedProps}
           strokeLinecap="round"
           transform={`rotate(-90 ${center} ${center})`}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -29,6 +29,7 @@ export function PhotoRegisterScreen() {
   const navigation = useNavigation<any>();
   const [photo, setPhoto] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [cameraLaunched, setCameraLaunched] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     description: '',
     category: 'Maintenance',
@@ -40,9 +41,20 @@ export function PhotoRegisterScreen() {
     notes: '',
   });
 
-  const handleTakePhoto = async () => {
+  // Automatically launch camera when screen opens
+  useEffect(() => {
+    if (!cameraLaunched) {
+      setCameraLaunched(true);
+      launchCamera();
+    }
+  }, []);
+
+  const launchCamera = async () => {
+    console.log('[PhotoRegister] launchCamera called');
+    
     // Request camera permissions
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    console.log('[PhotoRegister] Camera permission status:', status);
     
     if (status !== 'granted') {
       Alert.alert(
@@ -54,6 +66,7 @@ export function PhotoRegisterScreen() {
     }
 
     // Launch camera
+    console.log('[PhotoRegister] Launching camera...');
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
@@ -61,9 +74,20 @@ export function PhotoRegisterScreen() {
       quality: 0.8,
     });
 
+    console.log('[PhotoRegister] Camera result:', JSON.stringify(result, null, 2));
+
     if (!result.canceled && result.assets[0]) {
-      setPhoto(result.assets[0].uri);
+      const uri = result.assets[0].uri;
+      console.log('[PhotoRegister] Setting photo URI:', uri);
+      setPhoto(uri);
+    } else {
+      console.log('[PhotoRegister] Camera was canceled or no assets');
     }
+  };
+
+  const handleTakePhoto = async () => {
+    console.log('[PhotoRegister] handleTakePhoto called');
+    await launchCamera();
   };
 
   const handleChooseFromGallery = async () => {
@@ -124,6 +148,9 @@ export function PhotoRegisterScreen() {
 
   const categories = ['Maintenance', 'Repair', 'Inspection', 'Damage', 'Other'];
 
+  // Debug logging
+  console.log('[PhotoRegister] Render - photo state:', photo);
+
   return (
     <KeyboardAvoidingView 
       style={styles.container} 
@@ -145,7 +172,18 @@ export function PhotoRegisterScreen() {
           <View style={styles.photoSection}>
             {photo ? (
               <View style={styles.photoPreviewContainer}>
-                <Image source={{ uri: photo }} style={styles.photoPreview} />
+                <Image 
+                  key={photo}
+                  source={{ uri: photo }} 
+                  style={{
+                    width: '100%',
+                    height: 250,
+                    borderRadius: 12,
+                  }}
+                  resizeMode="contain"
+                  onLoad={() => console.log('[PhotoRegister] Image onLoad fired for:', photo)}
+                  onError={(e) => console.log('[PhotoRegister] Image load error:', e.nativeEvent.error)}
+                />
                 <TouchableOpacity 
                   style={styles.removePhotoButton}
                   onPress={() => setPhoto(null)}
@@ -293,14 +331,11 @@ const styles = StyleSheet.create({
   photoPreviewContainer: {
     position: 'relative',
     width: '100%',
-    height: 200,
+    height: 250,
     borderRadius: 12,
-    overflow: 'hidden',
-  },
-  photoPreview: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 12,
+    backgroundColor: '#334155',
+    borderWidth: 2,
+    borderColor: '#22C55E',
   },
   removePhotoButton: {
     position: 'absolute',
