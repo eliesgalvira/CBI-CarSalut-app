@@ -4,18 +4,31 @@ import { CAR_PROFILES, getInitialMetrics, adjustMetrics, NFC_TAG_TO_CAR } from '
 
 interface DemoContextValue {
   state: DemoState;
-  selectedCar: CarProfile;
+  selectedCar: CarProfile | null;
   cars: CarProfile[];
+  isInitialized: boolean;
   selectCar: (carId: string) => void;
-  selectCarByNFCTag: (tagContent: string) => void;
+  selectCarByNFCTag: (tagContent: string) => boolean;
   performSync: () => 'health' | 'decreased' | 'increased' | 'reset';
   resetDemo: () => void;
+  resetToUninitialized: () => void;
   getLastSyncFormatted: () => string;
 }
+
+// Default state: uninitialized (no car selected)
+const getUninitializedState = (): DemoState => ({
+  isInitialized: false,
+  selectedCarId: null,
+  syncCount: 0,
+  currentHealth: 0,
+  metrics: getInitialMetrics(0),
+  lastSyncDate: 'FEB 6 /25',
+});
 
 const getDefaultState = (carId: string): DemoState => {
   const car = CAR_PROFILES.find(c => c.id === carId) || CAR_PROFILES[0];
   return {
+    isInitialized: true,
     selectedCarId: car.id,
     syncCount: 0,
     currentHealth: car.initialHealth,
@@ -27,17 +40,20 @@ const getDefaultState = (carId: string): DemoState => {
 const DemoContext = createContext<DemoContextValue | null>(null);
 
 export function DemoStateProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<DemoState>(() => getDefaultState(CAR_PROFILES[0].id));
+  const [state, setState] = useState<DemoState>(getUninitializedState);
 
   const selectedCar = useMemo(
-    () => CAR_PROFILES.find(c => c.id === state.selectedCarId) || CAR_PROFILES[0],
+    () => state.selectedCarId ? CAR_PROFILES.find(c => c.id === state.selectedCarId) || null : null,
     [state.selectedCarId]
   );
+
+  const isInitialized = state.isInitialized;
 
   const selectCar = useCallback((carId: string) => {
     const car = CAR_PROFILES.find(c => c.id === carId);
     if (car) {
       setState({
+        isInitialized: true,
         selectedCarId: car.id,
         syncCount: 0,
         currentHealth: car.initialHealth,
@@ -47,11 +63,13 @@ export function DemoStateProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const selectCarByNFCTag = useCallback((tagContent: string) => {
+  const selectCarByNFCTag = useCallback((tagContent: string): boolean => {
     const carId = NFC_TAG_TO_CAR[tagContent.trim()];
     if (carId) {
       selectCar(carId);
+      return true;
     }
+    return false;
   }, [selectCar]);
 
   const performSync = useCallback((): 'health' | 'decreased' | 'increased' | 'reset' => {
@@ -102,8 +120,14 @@ export function DemoStateProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const resetDemo = useCallback(() => {
-    setState(getDefaultState(state.selectedCarId));
+    if (state.selectedCarId) {
+      setState(getDefaultState(state.selectedCarId));
+    }
   }, [state.selectedCarId]);
+
+  const resetToUninitialized = useCallback(() => {
+    setState(getUninitializedState());
+  }, []);
 
   const getLastSyncFormatted = useCallback(() => {
     return state.lastSyncDate;
@@ -114,13 +138,15 @@ export function DemoStateProvider({ children }: { children: ReactNode }) {
       state,
       selectedCar,
       cars: CAR_PROFILES,
+      isInitialized,
       selectCar,
       selectCarByNFCTag,
       performSync,
       resetDemo,
+      resetToUninitialized,
       getLastSyncFormatted,
     }),
-    [state, selectedCar, selectCar, selectCarByNFCTag, performSync, resetDemo, getLastSyncFormatted]
+    [state, selectedCar, isInitialized, selectCar, selectCarByNFCTag, performSync, resetDemo, resetToUninitialized, getLastSyncFormatted]
   );
 
   return <DemoContext.Provider value={value}>{children}</DemoContext.Provider>;

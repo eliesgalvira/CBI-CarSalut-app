@@ -46,7 +46,8 @@ export interface MaintenanceHistory {
 }
 
 export interface DemoState {
-  selectedCarId: string;
+  isInitialized: boolean; // Whether a car has been selected via NFC
+  selectedCarId: string | null; // null when not initialized
   syncCount: number; // 0-3 cycle, 4 resets to 0
   currentHealth: number;
   metrics: HealthMetrics;

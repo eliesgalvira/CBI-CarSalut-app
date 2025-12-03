@@ -8,3 +8,4 @@ export { WaterDetailScreen } from './WaterDetailScreen';
 export { TiresDetailScreen } from './TiresDetailScreen';
 export { MandatoryChecksScreen } from './MandatoryChecksScreen';
 export { WaterPumpDetailScreen } from './WaterPumpDetailScreen';
+export { PhotoRegisterScreen } from './PhotoRegisterScreen';

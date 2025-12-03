@@ -1,0 +1,1 @@
+export { useNFC } from './useNFC';

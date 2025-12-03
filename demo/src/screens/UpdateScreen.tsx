@@ -5,28 +5,43 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { DemoHeader, DemoButton, ActionCard } from '../components';
 import { useDemoState } from '../context/DemoStateContext';
+import { useNFC } from '../hooks/useNFC';
 
 export function UpdateScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const { performSync } = useDemoState();
+  const { readTag, status: nfcStatus } = useNFC();
   const [syncLoading, setSyncLoading] = useState(false);
 
   const handleSync = async () => {
     setSyncLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    const result = performSync();
-    setSyncLoading(false);
-
-    if (result === 'reset') {
-      Alert.alert('Sync Complete', 'Demo cycle complete! Starting over.');
-    } else if (result === 'decreased') {
-      Alert.alert('Sync Complete', 'Car condition decreased by 2%');
-    } else if (result === 'increased') {
-      Alert.alert('Sync Complete', 'Car condition improved by 5%! 🎉');
-    } else {
-      Alert.alert('Sync Complete', 'Initial sync successful!');
+    
+    try {
+      const tagContent = await readTag();
+      
+      if (tagContent) {
+        const result = performSync();
+        
+        if (result === 'reset') {
+          Alert.alert('Sync Complete', 'Demo cycle complete! Starting over.');
+        } else if (result === 'decreased') {
+          Alert.alert('Sync Complete', 'Car condition decreased by 2%');
+        } else if (result === 'increased') {
+          Alert.alert('Sync Complete', 'Car condition improved by 5%! 🎉');
+        } else {
+          Alert.alert('Sync Complete', 'Initial sync successful!');
+        }
+      }
+    } catch (error) {
+      console.error('NFC error:', error);
+    } finally {
+      setSyncLoading(false);
     }
+  };
+
+  const handlePhotoRegister = () => {
+    navigation.navigate('PhotoRegister');
   };
 
   const handleActionPress = (action: string) => {
@@ -46,10 +61,10 @@ export function UpdateScreen() {
         <Text style={styles.stepLabel}>1. TAP TO SYNC WITH YOUR TAG</Text>
         
         <DemoButton
-          label="Sync to Upload"
+          label={nfcStatus === 'scanning' ? 'Waiting for NFC...' : 'Sync to Upload'}
           icon="wifi"
           onPress={handleSync}
-          loading={syncLoading}
+          loading={syncLoading || nfcStatus === 'scanning'}
           variant="primary"
           style={styles.syncButton}
         />
@@ -61,7 +76,7 @@ export function UpdateScreen() {
           <ActionCard
             icon="camera-outline"
             label="Photo Register"
-            onPress={() => handleActionPress('Photo Register')}
+            onPress={handlePhotoRegister}
           />
           <ActionCard
             icon="cloud-upload-outline"

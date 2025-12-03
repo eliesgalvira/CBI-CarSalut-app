@@ -5,7 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { DemoStateProvider } from './context/DemoStateContext';
+import { DemoStateProvider, useDemoState } from './context/DemoStateContext';
 import {
   DemoHomeScreen,
   ConditionScreen,
@@ -17,6 +17,7 @@ import {
   TiresDetailScreen,
   MandatoryChecksScreen,
   WaterPumpDetailScreen,
+  PhotoRegisterScreen,
 } from './screens';
 
 const Tab = createBottomTabNavigator();
@@ -54,6 +55,7 @@ function UpdateStackNavigator() {
   return (
     <UpdateStack.Navigator screenOptions={{ headerShown: false }}>
       <UpdateStack.Screen name="Update" component={UpdateScreen} />
+      <UpdateStack.Screen name="PhotoRegister" component={PhotoRegisterScreen} />
     </UpdateStack.Navigator>
   );
 }
@@ -81,10 +83,17 @@ function TabIcon({ name, color, size }: { name: string; color: string; size: num
   return <Ionicons name={name as any} size={size} color={color} />;
 }
 
-// Main Demo Navigator
-function DemoTabNavigator() {
+// Main Demo Navigator - switches between uninitialized (Stack only) and initialized (Tabs)
+function DemoMainNavigator() {
+  const { isInitialized } = useDemoState();
   const insets = useSafeAreaInsets();
 
+  // When not initialized, only show home screen without tabs
+  if (!isInitialized) {
+    return <HomeStackNavigator />;
+  }
+
+  // When initialized, show full tab navigator
   return (
     <Tab.Navigator
       screenOptions={{
@@ -160,7 +169,7 @@ function DemoTabNavigator() {
 export function DemoNavigator() {
   return (
     <DemoStateProvider>
-      <DemoTabNavigator />
+      <DemoMainNavigator />
     </DemoStateProvider>
   );
 }
