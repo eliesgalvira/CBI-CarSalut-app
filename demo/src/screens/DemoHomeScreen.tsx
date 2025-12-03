@@ -5,13 +5,12 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useDemoState } from '../context/DemoStateContext';
 import { useNFC } from '../hooks/useNFC';
-import { DemoHeader, HealthCircle, CarDropdown, DemoButton } from '../components';
-import { NFC_TAG_TO_CAR } from '../data/carProfiles';
+import { DemoHeader, HealthCircle, DemoButton } from '../components';
 
 export function DemoHomeScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
-  const { state, selectedCar, cars, selectCar, selectCarByNFCTag, isInitialized, resetToUninitialized } = useDemoState();
+  const { state, selectedCar, selectCarByNFCTag, isInitialized, pendingNotifications, readCondition, resetToUninitialized } = useDemoState();
   const { readTag, status: nfcStatus, error: nfcError } = useNFC();
   const [syncLoading, setSyncLoading] = useState(false);
 
@@ -42,6 +41,7 @@ export function DemoHomeScreen() {
   };
 
   const handleReadCondition = () => {
+    readCondition();
     navigation.navigate('ConditionTab');
   };
 
@@ -100,7 +100,7 @@ export function DemoHomeScreen() {
     );
   }
 
-  // INITIALIZED STATE: Show car dropdown, health circle, and only "Read Car's Condition"
+  // INITIALIZED STATE: Show car name, health circle, and only "Read Car's Condition"
   return (
     <View style={[styles.container, { paddingBottom: insets.bottom }]}>
       <DemoHeader />
@@ -109,13 +109,9 @@ export function DemoHomeScreen() {
         {/* Greeting */}
         <Text style={styles.greeting}>Hello Andreu</Text>
         
-        {/* Car Dropdown */}
+        {/* Car Name (read-only, no dropdown) */}
         {selectedCar && (
-          <CarDropdown
-            selectedCar={selectedCar}
-            cars={cars}
-            onSelect={selectCar}
-          />
+          <Text style={styles.carName}>{selectedCar.name}</Text>
         )}
         
         {/* Health Circle */}
@@ -142,9 +138,9 @@ export function DemoHomeScreen() {
               variant="secondary"
               style={styles.conditionButton}
             />
-            {/* Notification badge */}
+            {/* Notification badge - counts down from 3 */}
             <View style={styles.notificationBadge}>
-              <Text style={styles.notificationText}>5</Text>
+              <Text style={styles.notificationText}>{pendingNotifications}</Text>
             </View>
           </View>
         </View>
@@ -210,6 +206,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#475569',
     marginTop: 8,
+  },
+  carName: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#22C55E',
+    marginBottom: 8,
+    textAlign: 'center',
   },
   refreshIcon: {
     position: 'absolute',

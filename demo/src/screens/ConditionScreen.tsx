@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useDemoState } from '../context/DemoStateContext';
-import { DemoHeader, HealthBar, ImprovementCard, CarDropdown } from '../components';
+import { DemoHeader, HealthBar, ImprovementCard } from '../components';
 import { getMaintenanceItems } from '../data/carProfiles';
 
 const IMPROVEMENT_TYPES = [
@@ -16,7 +16,7 @@ const IMPROVEMENT_TYPES = [
 export function ConditionScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
-  const { state, selectedCar, cars, selectCar } = useDemoState();
+  const { state, selectedCar } = useDemoState();
   const [filterType, setFilterType] = useState('all');
   const [showFilter, setShowFilter] = useState(false);
 

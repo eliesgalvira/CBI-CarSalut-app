@@ -132,6 +132,31 @@ export function adjustMetrics(metrics: HealthMetrics, delta: number): HealthMetr
   };
 }
 
+// State 1: Decreased metrics with warnings for tires and water pump
+export function getDecreasedMetrics(metrics: HealthMetrics): HealthMetrics {
+  return {
+    overall: Math.max(0, metrics.overall - 2),
+    waterLevel: metrics.waterLevel, // Keep same
+    waterPump: 45, // Force warning (yellow at <60, red at <40)
+    oil: metrics.oil, // Keep same
+    tires: 55, // Force warning (yellow at <75, red at <50)
+    mandatoryChecks: metrics.mandatoryChecks, // Keep same
+  };
+}
+
+// State 2: Improved metrics with no warnings
+export function getImprovedMetrics(baseHealth: number): HealthMetrics {
+  const improvedHealth = baseHealth + 5;
+  return {
+    overall: improvedHealth,
+    waterLevel: 85, // Good level, no warning
+    waterPump: 80, // Good level, no warning
+    oil: 85, // Good level, no warning
+    tires: 90, // Good level, no warning
+    mandatoryChecks: 75, // Good level, no warning
+  };
+}
+
 export const MAINTENANCE_GUIDES: Record<string, { title: string; recommendation: string; interval: string }> = {
   water: {
     title: 'WATER LEVEL',

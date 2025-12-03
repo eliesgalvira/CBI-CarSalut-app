@@ -1,15 +1,16 @@
 import React, { createContext, useContext, useState, useCallback, useMemo, ReactNode } from 'react';
 import { DemoState, HealthMetrics, CarProfile } from '../types';
-import { CAR_PROFILES, getInitialMetrics, adjustMetrics, NFC_TAG_TO_CAR } from '../data/carProfiles';
+import { CAR_PROFILES, getInitialMetrics, getDecreasedMetrics, getImprovedMetrics, NFC_TAG_TO_CAR } from '../data/carProfiles';
 
 interface DemoContextValue {
   state: DemoState;
   selectedCar: CarProfile | null;
   cars: CarProfile[];
   isInitialized: boolean;
+  pendingNotifications: number; // 3, 2, 1 countdown
   selectCar: (carId: string) => void;
   selectCarByNFCTag: (tagContent: string) => boolean;
-  performSync: () => 'health' | 'decreased' | 'increased' | 'reset';
+  readCondition: () => 'initial' | 'decreased' | 'increased';
   resetDemo: () => void;
   resetToUninitialized: () => void;
   getLastSyncFormatted: () => string;
@@ -19,7 +20,7 @@ interface DemoContextValue {
 const getUninitializedState = (): DemoState => ({
   isInitialized: false,
   selectedCarId: null,
-  syncCount: 0,
+  readConditionCount: 0,
   currentHealth: 0,
   metrics: getInitialMetrics(0),
   lastSyncDate: 'FEB 6 /25',
@@ -30,7 +31,7 @@ const getDefaultState = (carId: string): DemoState => {
   return {
     isInitialized: true,
     selectedCarId: car.id,
-    syncCount: 0,
+    readConditionCount: 0,
     currentHealth: car.initialHealth,
     metrics: getInitialMetrics(car.initialHealth),
     lastSyncDate: 'FEB 6 /25',
@@ -55,7 +56,7 @@ export function DemoStateProvider({ children }: { children: ReactNode }) {
       setState({
         isInitialized: true,
         selectedCarId: car.id,
-        syncCount: 0,
+        readConditionCount: 0,
         currentHealth: car.initialHealth,
         metrics: getInitialMetrics(car.initialHealth),
         lastSyncDate: 'FEB 6 /25',
@@ -72,44 +73,40 @@ export function DemoStateProvider({ children }: { children: ReactNode }) {
     return false;
   }, [selectCar]);
 
-  const performSync = useCallback((): 'health' | 'decreased' | 'increased' | 'reset' => {
-    let result: 'health' | 'decreased' | 'increased' | 'reset';
+  // Calculate pending notifications: readConditionCount + 1 (1, 2, 3)
+  const pendingNotifications = state.readConditionCount + 1;
+
+  // Read condition cycles through 3 states: 0 -> 1 -> 2 -> 0
+  const readCondition = useCallback((): 'initial' | 'decreased' | 'increased' => {
+    let result: 'initial' | 'decreased' | 'increased';
 
     setState(prev => {
-      const newSyncCount = (prev.syncCount + 1) % 4;
+      const car = CAR_PROFILES.find(c => c.id === prev.selectedCarId) || CAR_PROFILES[0];
       
-      if (prev.syncCount === 0) {
-        // First sync: show initial health (no change)
-        result = 'health';
-        return {
-          ...prev,
-          syncCount: newSyncCount,
-        };
-      } else if (prev.syncCount === 1) {
-        // Second sync: decrease health by 2%
+      if (prev.readConditionCount === 0) {
+        // State 0 -> 1: First read, decrease health by 2%, show warnings
         result = 'decreased';
         return {
           ...prev,
-          syncCount: newSyncCount,
+          readConditionCount: 1,
           currentHealth: prev.currentHealth - 2,
-          metrics: adjustMetrics(prev.metrics, -2),
+          metrics: getDecreasedMetrics(prev.metrics),
         };
-      } else if (prev.syncCount === 2) {
-        // Third sync: increase health by 5%
+      } else if (prev.readConditionCount === 1) {
+        // State 1 -> 2: Second read, increase health by 5%, remove warnings
         result = 'increased';
         return {
           ...prev,
-          syncCount: newSyncCount,
+          readConditionCount: 2,
           currentHealth: prev.currentHealth + 5,
-          metrics: adjustMetrics(prev.metrics, 5),
+          metrics: getImprovedMetrics(car.initialHealth),
         };
       } else {
-        // Fourth sync (syncCount === 3): reset to initial
-        result = 'reset';
-        const car = CAR_PROFILES.find(c => c.id === prev.selectedCarId) || CAR_PROFILES[0];
+        // State 2 -> 0: Reset to initial
+        result = 'initial';
         return {
           ...prev,
-          syncCount: 0,
+          readConditionCount: 0,
           currentHealth: car.initialHealth,
           metrics: getInitialMetrics(car.initialHealth),
         };
@@ -139,14 +136,15 @@ export function DemoStateProvider({ children }: { children: ReactNode }) {
       selectedCar,
       cars: CAR_PROFILES,
       isInitialized,
+      pendingNotifications,
       selectCar,
       selectCarByNFCTag,
-      performSync,
+      readCondition,
       resetDemo,
       resetToUninitialized,
       getLastSyncFormatted,
     }),
-    [state, selectedCar, isInitialized, selectCar, selectCarByNFCTag, performSync, resetDemo, resetToUninitialized, getLastSyncFormatted]
+    [state, selectedCar, isInitialized, pendingNotifications, selectCar, selectCarByNFCTag, readCondition, resetDemo, resetToUninitialized, getLastSyncFormatted]
   );
 
   return <DemoContext.Provider value={value}>{children}</DemoContext.Provider>;
