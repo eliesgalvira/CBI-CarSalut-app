@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useDemoState } from '../context/DemoStateContext';
 
 interface DemoHeaderProps {
   showBack?: boolean;
@@ -21,6 +22,10 @@ export function DemoHeader({
   onCarDropdownPress,
 }: DemoHeaderProps) {
   const insets = useSafeAreaInsets();
+  const { state } = useDemoState();
+  
+  // Get first letter of user's name, or fallback to "?"
+  const profileInitial = state.userName ? state.userName.charAt(0).toUpperCase() : '?';
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
@@ -51,10 +56,10 @@ export function DemoHeader({
           ) : null}
         </View>
 
-        {/* Right side - AD badge */}
+        {/* Right side - Profile badge with initial */}
         <View style={styles.rightSection}>
           <View style={styles.adBadge}>
-            <Text style={styles.adText}>AD</Text>
+            <Text style={styles.adText}>{profileInitial}</Text>
           </View>
         </View>
       </View>

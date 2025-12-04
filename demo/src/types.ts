@@ -52,6 +52,7 @@ export interface DemoState {
   currentHealth: number;
   metrics: HealthMetrics;
   lastSyncDate: string;
+  userName: string | null; // User's name, asked at start
 }
 
 export type DemoTab = 'home' | 'condition' | 'update' | 'yourCar' | 'driver';

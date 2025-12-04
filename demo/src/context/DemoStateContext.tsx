@@ -14,6 +14,7 @@ interface DemoContextValue {
   resetDemo: () => void;
   resetToUninitialized: () => void;
   getLastSyncFormatted: () => string;
+  setUserName: (name: string) => void;
 }
 
 // Default state: uninitialized (no car selected)
@@ -24,9 +25,10 @@ const getUninitializedState = (): DemoState => ({
   currentHealth: 0,
   metrics: getInitialMetrics(0),
   lastSyncDate: 'FEB 6 /25',
+  userName: null,
 });
 
-const getDefaultState = (carId: string): DemoState => {
+const getDefaultState = (carId: string, userName: string | null = null): DemoState => {
   const car = CAR_PROFILES.find(c => c.id === carId) || CAR_PROFILES[0];
   return {
     isInitialized: true,
@@ -35,6 +37,7 @@ const getDefaultState = (carId: string): DemoState => {
     currentHealth: car.initialHealth,
     metrics: getInitialMetrics(car.initialHealth),
     lastSyncDate: 'FEB 6 /25',
+    userName,
   };
 };
 
@@ -53,14 +56,15 @@ export function DemoStateProvider({ children }: { children: ReactNode }) {
   const selectCar = useCallback((carId: string) => {
     const car = CAR_PROFILES.find(c => c.id === carId);
     if (car) {
-      setState({
+      setState(prev => ({
         isInitialized: true,
         selectedCarId: car.id,
         readConditionCount: 0,
         currentHealth: car.initialHealth,
         metrics: getInitialMetrics(car.initialHealth),
         lastSyncDate: 'FEB 6 /25',
-      });
+        userName: prev.userName,
+      }));
     }
   }, []);
 
@@ -116,11 +120,15 @@ export function DemoStateProvider({ children }: { children: ReactNode }) {
     return result!;
   }, []);
 
+  const setUserName = useCallback((name: string) => {
+    setState(prev => ({ ...prev, userName: name }));
+  }, []);
+
   const resetDemo = useCallback(() => {
     if (state.selectedCarId) {
-      setState(getDefaultState(state.selectedCarId));
+      setState(getDefaultState(state.selectedCarId, state.userName));
     }
-  }, [state.selectedCarId]);
+  }, [state.selectedCarId, state.userName]);
 
   const resetToUninitialized = useCallback(() => {
     setState(getUninitializedState());
@@ -143,8 +151,9 @@ export function DemoStateProvider({ children }: { children: ReactNode }) {
       resetDemo,
       resetToUninitialized,
       getLastSyncFormatted,
+      setUserName,
     }),
-    [state, selectedCar, isInitialized, pendingNotifications, selectCar, selectCarByNFCTag, readCondition, resetDemo, resetToUninitialized, getLastSyncFormatted]
+    [state, selectedCar, isInitialized, pendingNotifications, selectCar, selectCarByNFCTag, readCondition, resetDemo, resetToUninitialized, getLastSyncFormatted, setUserName]
   );
 
   return <DemoContext.Provider value={value}>{children}</DemoContext.Provider>;

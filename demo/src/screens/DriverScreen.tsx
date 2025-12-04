@@ -4,10 +4,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { DemoHeader, DemoButton } from '../components';
+import { useDemoState } from '../context/DemoStateContext';
 
 export function DriverScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
+  const { state } = useDemoState();
+
+  const displayName = state.userName || 'Driver';
 
   return (
     <View style={[styles.container, { paddingBottom: insets.bottom }]}>
@@ -19,8 +23,7 @@ export function DriverScreen() {
           <View style={styles.avatarContainer}>
             <Ionicons name="person-circle" size={80} color="#64748b" />
           </View>
-          <Text style={styles.userName}>Andreu Garcia</Text>
-          <Text style={styles.userEmail}>andreu.garcia@email.com</Text>
+          <Text style={styles.userName}>{displayName}</Text>
           
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
@@ -98,11 +101,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 24,
     fontWeight: '600',
-  },
-  userEmail: {
-    color: '#64748b',
-    fontSize: 14,
-    marginTop: 4,
   },
   statsRow: {
     flexDirection: 'row',
