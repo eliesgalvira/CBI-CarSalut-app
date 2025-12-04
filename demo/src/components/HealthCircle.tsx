@@ -55,67 +55,79 @@ export function HealthCircle({
   const dashArray = `${circumference} ${circumference}`;
 
   return (
-    <View style={[styles.container, { width: size, height: size }]}>
-      <Svg width={size} height={size} style={styles.svg}>
-        <Defs>
-          <LinearGradient id="healthGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <Stop offset="0%" stopColor={getColor()} />
-            <Stop offset="100%" stopColor={getColor()} stopOpacity={0.8} />
-          </LinearGradient>
-        </Defs>
-        
-        {/* Background circle */}
-        <Circle
-          cx={center}
-          cy={center}
-          r={radius}
-          stroke="rgba(255, 255, 255, 0.1)"
-          strokeWidth={strokeWidth}
-          fill="none"
-        />
-        
-        {/* Progress circle */}
-        <AnimatedCircle
-          cx={center}
-          cy={center}
-          r={radius}
-          stroke="url(#healthGradient)"
-          strokeWidth={strokeWidth}
-          fill="none"
-          strokeDasharray={dashArray}
-          animatedProps={animatedProps}
-          strokeLinecap="round"
-          transform={`rotate(-90 ${center} ${center})`}
-        />
-      </Svg>
+    <View style={styles.wrapper}>
+      {/* Condition label above the circle */}
+      <Text style={styles.conditionLabel}>CONDITION</Text>
       
-      {/* Content inside circle */}
-      <View style={styles.content}>
-        <Text style={styles.conditionLabel}>CONDITION</Text>
+      <View style={[styles.container, { width: size, height: size }]}>
+        <Svg width={size} height={size} style={styles.svg}>
+          <Defs>
+            <LinearGradient id="healthGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <Stop offset="0%" stopColor={getColor()} />
+              <Stop offset="100%" stopColor={getColor()} stopOpacity={0.8} />
+            </LinearGradient>
+          </Defs>
+          
+          {/* Background circle */}
+          <Circle
+            cx={center}
+            cy={center}
+            r={radius}
+            stroke="rgba(255, 255, 255, 0.1)"
+            strokeWidth={strokeWidth}
+            fill="none"
+          />
+          
+          {/* Progress circle */}
+          <AnimatedCircle
+            cx={center}
+            cy={center}
+            r={radius}
+            stroke="url(#healthGradient)"
+            strokeWidth={strokeWidth}
+            fill="none"
+            strokeDasharray={dashArray}
+            animatedProps={animatedProps}
+            strokeLinecap="round"
+            transform={`rotate(-90 ${center} ${center})`}
+          />
+        </Svg>
         
-        {showCar && (
-          <View style={styles.carPlaceholder}>
-            <Text style={styles.carEmoji}>🚗</Text>
+        {/* Content inside circle */}
+        <View style={styles.content}>
+          {showCar && (
+            <View style={styles.carPlaceholder}>
+              <Text style={styles.carEmoji}>🚗</Text>
+            </View>
+          )}
+          
+          <View style={styles.percentageContainer}>
+            <Text style={styles.percentageValue}>{Math.round(percentage)}</Text>
+            <Text style={styles.percentageSymbol}>%</Text>
           </View>
-        )}
-        
-        <View style={styles.percentageContainer}>
-          <Text style={styles.percentageValue}>{Math.round(percentage)}</Text>
-          <Text style={styles.percentageSymbol}>%</Text>
+          
+          {lastSync && (
+            <View style={styles.syncContainer}>
+              <Text style={styles.syncLabel}>LAST SYNC:</Text>
+              <Text style={styles.syncDate}>{lastSync}</Text>
+            </View>
+          )}
         </View>
-        
-        {lastSync && (
-          <View style={styles.syncContainer}>
-            <Text style={styles.syncLabel}>LAST SYNC:</Text>
-            <Text style={styles.syncDate}>{lastSync}</Text>
-          </View>
-        )}
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    alignItems: 'center',
+  },
+  conditionLabel: {
+    color: '#94a3b8',
+    fontSize: 18,
+    letterSpacing: 2,
+    marginBottom: 25,
+  },
   container: {
     position: 'relative',
     alignItems: 'center',
@@ -127,12 +139,6 @@ const styles = StyleSheet.create({
   content: {
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  conditionLabel: {
-    color: '#94a3b8',
-    fontSize: 12,
-    letterSpacing: 2,
-    marginBottom: 4,
   },
   carPlaceholder: {
     marginVertical: 8,
