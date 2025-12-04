@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, Modal, TextInput, TouchableOpacity, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, Alert, Modal, TextInput, TouchableOpacity, TouchableWithoutFeedback, Keyboard, Animated, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,6 +15,35 @@ export function DemoHomeScreen() {
   const [syncLoading, setSyncLoading] = useState(false);
   const [nameModalVisible, setNameModalVisible] = useState(!state.userName);
   const [nameInput, setNameInput] = useState('');
+  
+  // Animated value for keyboard offset
+  const keyboardOffset = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const keyboardShowEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const keyboardHideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSubscription = Keyboard.addListener(keyboardShowEvent, (e) => {
+      Animated.timing(keyboardOffset, {
+        toValue: -e.endCoordinates.height / 3,
+        duration: Platform.OS === 'ios' ? e.duration : 200,
+        useNativeDriver: true,
+      }).start();
+    });
+
+    const hideSubscription = Keyboard.addListener(keyboardHideEvent, (e) => {
+      Animated.timing(keyboardOffset, {
+        toValue: 0,
+        duration: Platform.OS === 'ios' ? e.duration : 200,
+        useNativeDriver: true,
+      }).start();
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, [keyboardOffset]);
 
   const handleSyncToUpload = async () => {
     setSyncLoading(true);
@@ -86,7 +115,7 @@ export function DemoHomeScreen() {
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <Animated.View style={[styles.modalContent, { transform: [{ translateY: keyboardOffset }] }]}>
             <Text style={styles.modalTitle}>Welcome!</Text>
             <Text style={styles.modalSubtitle}>What's your name?</Text>
             <TextInput
@@ -106,7 +135,7 @@ export function DemoHomeScreen() {
             >
               <Text style={styles.submitButtonText}>Continue</Text>
             </TouchableOpacity>
-          </View>
+          </Animated.View>
         </View>
       </TouchableWithoutFeedback>
     </Modal>
