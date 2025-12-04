@@ -121,11 +121,6 @@ export function DemoHomeScreen() {
             size={260}
             lastSync={state.lastSyncDate}
           />
-          
-          {/* Refresh icon */}
-          <View style={styles.refreshIcon}>
-            <Ionicons name="refresh-outline" size={24} color="#64748b" />
-          </View>
         </View>
         
         {/* Only Read Car's Condition button (no Sync to Upload) */}
@@ -213,14 +208,6 @@ const styles = StyleSheet.create({
     color: '#22C55E',
     marginBottom: 8,
     textAlign: 'center',
-  },
-  refreshIcon: {
-    position: 'absolute',
-    right: -8,
-    bottom: 40,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    padding: 8,
-    borderRadius: 20,
   },
   buttonContainer: {
     width: '100%',
