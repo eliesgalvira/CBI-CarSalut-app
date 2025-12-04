@@ -14,7 +14,6 @@ interface HealthCircleProps {
   percentage: number;
   size?: number;
   strokeWidth?: number;
-  lastSync?: string;
   showCar?: boolean;
 }
 
@@ -22,7 +21,6 @@ export function HealthCircle({
   percentage,
   size = 220,
   strokeWidth = 12,
-  lastSync,
   showCar = true,
 }: HealthCircleProps) {
   const progress = useSharedValue(0);
@@ -105,13 +103,6 @@ export function HealthCircle({
             <Text style={styles.percentageValue}>{Math.round(percentage)}</Text>
             <Text style={styles.percentageSymbol}>%</Text>
           </View>
-          
-          {lastSync && (
-            <View style={styles.syncContainer}>
-              <Text style={styles.syncLabel}>LAST SYNC:</Text>
-              <Text style={styles.syncDate}>{lastSync}</Text>
-            </View>
-          )}
         </View>
       </View>
     </View>
@@ -160,19 +151,5 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '200',
     marginTop: 8,
-  },
-  syncContainer: {
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  syncLabel: {
-    color: '#64748b',
-    fontSize: 10,
-    letterSpacing: 1,
-  },
-  syncDate: {
-    color: '#94a3b8',
-    fontSize: 12,
-    fontWeight: '500',
   },
 });

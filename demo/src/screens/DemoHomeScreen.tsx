@@ -119,7 +119,6 @@ export function DemoHomeScreen() {
           <HealthCircle
             percentage={state.currentHealth}
             size={260}
-            lastSync={state.lastSyncDate}
           />
         </View>
         
