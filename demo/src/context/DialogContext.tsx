@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import { Alert, Platform } from 'react-native';
-import { AlertDialog, Host } from '@expo/ui/jetpack-compose';
+import { NativeModulesProxy } from 'expo-modules-core';
 
 type DialogButton = {
   text: string;
@@ -30,6 +30,23 @@ type DialogContextType = {
 
 const DialogContext = createContext<DialogContextType | null>(null);
 
+const expoUiAvailable = Platform.OS === 'android' && Boolean((NativeModulesProxy as any).ExpoUI);
+
+type ComposeExports = {
+  Host: React.ComponentType<any>;
+  AlertDialog: React.ComponentType<any>;
+};
+
+let composeUi: ComposeExports | null = null;
+
+if (expoUiAvailable) {
+  try {
+    composeUi = require('@expo/ui/jetpack-compose');
+  } catch {
+    composeUi = null;
+  }
+}
+
 const initialState: DialogState = {
   visible: false,
   title: '',
@@ -52,6 +69,9 @@ function pickButtons(buttons?: DialogButton[]) {
 }
 
 export function DialogProvider({ children }: { children: React.ReactNode }) {
+  const canUseExpoAlertDialog = Platform.OS === 'android' && Boolean(composeUi?.Host) && Boolean(composeUi?.AlertDialog);
+  const HostComponent = composeUi?.Host;
+  const AlertDialogComponent = composeUi?.AlertDialog;
   const [dialog, setDialog] = useState<DialogState>(initialState);
 
   const hideDialog = useCallback(() => {
@@ -59,7 +79,7 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const showDialog = useCallback((options: DialogOptions) => {
-    if (Platform.OS !== 'android') {
+    if (!canUseExpoAlertDialog) {
       Alert.alert(options.title, options.message, options.buttons as any);
       return;
     }
@@ -75,16 +95,16 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
       onConfirm: confirm.onPress,
       onDismiss: dismiss?.onPress,
     });
-  }, []);
+  }, [canUseExpoAlertDialog]);
 
   const value = useMemo(() => ({ showDialog }), [showDialog]);
 
   return (
     <DialogContext.Provider value={value}>
-      {Platform.OS === 'android' ? (
-        <Host matchContents>
+      {canUseExpoAlertDialog && HostComponent && AlertDialogComponent ? (
+        <HostComponent matchContents>
           {children}
-          <AlertDialog
+          <AlertDialogComponent
             visible={dialog.visible}
             title={dialog.title}
             text={dialog.message}
@@ -101,7 +121,7 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
               callback?.();
             }}
           />
-        </Host>
+        </HostComponent>
       ) : (
         children
       )}
