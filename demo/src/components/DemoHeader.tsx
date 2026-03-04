@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDemoState } from '../context/DemoStateContext';
+import { T } from '../theme';
 
 interface DemoHeaderProps {
   showBack?: boolean;
@@ -23,43 +24,45 @@ export function DemoHeader({
 }: DemoHeaderProps) {
   const insets = useSafeAreaInsets();
   const { state } = useDemoState();
-  
-  // Get first letter of user's name, or fallback to "?"
-  const profileInitial = state.userName ? state.userName.charAt(0).toUpperCase() : '?';
+
+  const initial = state.userName ? state.userName.charAt(0).toUpperCase() : '?';
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
+    <View style={[styles.container, { paddingTop: insets.top + 10 }]}>  
       <View style={styles.row}>
-        {/* Left side - Logo or Back */}
-        <View style={styles.leftSection}>
+        {/* Left */}
+        <View style={styles.left}>
           {showBack ? (
-            <TouchableOpacity onPress={onBack} style={styles.backButton}>
-              <Ionicons name="chevron-back" size={28} color="#fff" />
+            <TouchableOpacity onPress={onBack} style={styles.backBtn} activeOpacity={0.6}>
+              <Ionicons name="chevron-back" size={24} color={T.text} />
             </TouchableOpacity>
           ) : (
-            <View style={styles.logoContainer}>
-              <Ionicons name="eye-outline" size={24} color="#fff" />
+            <View style={styles.logo}>
+              <View style={styles.logoIcon}>
+                <Ionicons name="car-sport" size={18} color={T.accent} />
+              </View>
               <Text style={styles.logoText}>CarSight</Text>
             </View>
           )}
         </View>
 
-        {/* Center - Title or Car Dropdown */}
-        <View style={styles.centerSection}>
+        {/* Center */}
+        <View style={styles.center}>
           {title ? (
-            <Text style={styles.title}>{title}</Text>
+            <Text style={styles.title} numberOfLines={1}>{title}</Text>
           ) : showCarDropdown && carName ? (
-            <TouchableOpacity style={styles.carDropdown} onPress={onCarDropdownPress}>
-              <Text style={styles.carDropdownText}>{carName}</Text>
-              <Ionicons name="chevron-down" size={16} color="#fff" />
+            <TouchableOpacity style={styles.carPill} onPress={onCarDropdownPress} activeOpacity={0.7}>
+              <Ionicons name="car-sport-outline" size={14} color={T.accent} />
+              <Text style={styles.carPillText} numberOfLines={1}>{carName}</Text>
+              <Ionicons name="chevron-down" size={14} color={T.textSoft} />
             </TouchableOpacity>
           ) : null}
         </View>
 
-        {/* Right side - Profile badge with initial */}
-        <View style={styles.rightSection}>
-          <View style={styles.adBadge}>
-            <Text style={styles.adText}>{profileInitial}</Text>
+        {/* Right */}
+        <View style={styles.right}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{initial}</Text>
           </View>
         </View>
       </View>
@@ -69,74 +72,79 @@ export function DemoHeader({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#000000',
-    paddingHorizontal: 16,
-    paddingBottom: 12,
+    backgroundColor: T.bg,
+    paddingHorizontal: 20,
+    paddingBottom: 14,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  leftSection: {
-    flex: 1,
-    alignItems: 'flex-start',
-  },
-  centerSection: {
-    flex: 2,
-    alignItems: 'center',
-  },
-  rightSection: {
-    flex: 1,
-    alignItems: 'flex-end',
-  },
-  logoContainer: {
+  left: { flex: 1, alignItems: 'flex-start' },
+  center: { flex: 2, alignItems: 'center' },
+  right: { flex: 1, alignItems: 'flex-end' },
+  logo: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  logoText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  backButton: {
-    padding: 4,
-  },
-  title: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  carDropdown: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 0,
-    borderWidth: 1,
-    borderColor: '#00FF41',
-    gap: 6,
-  },
-  carDropdownText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  adBadge: {
-    backgroundColor: '#8b5cf6',
-    width: 36,
-    height: 36,
-    borderRadius: 0,
+  logoIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: T.r.sm,
+    backgroundColor: T.accentDim,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  adText: {
+  logoText: {
+    color: T.text,
+    fontSize: 18,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+  },
+  backBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: T.r.sm,
+    backgroundColor: T.bgCard,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  title: {
+    color: T.text,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  carPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: T.bgCard,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: T.r.full,
+    borderWidth: 1,
+    borderColor: T.accentBorder,
+    gap: 6,
+    maxWidth: 200,
+  },
+  carPillText: {
+    color: T.text,
+    fontSize: 13,
+    fontWeight: '600',
+    flexShrink: 1,
+  },
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: T.r.full,
+    backgroundColor: T.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
     color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
+    fontSize: 14,
+    fontWeight: '700',
   },
 });

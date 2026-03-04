@@ -1,9 +1,10 @@
 import React from 'react';
-import { StyleSheet, View, Text } from 'react-native';
+import { StyleSheet, View, Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { T } from './theme';
 
 import { DemoStateProvider, useDemoState } from './context/DemoStateContext';
 import {
@@ -27,7 +28,6 @@ const UpdateStack = createNativeStackNavigator();
 const YourCarStack = createNativeStackNavigator();
 const DriverStack = createNativeStackNavigator();
 
-// Home Tab Stack
 function HomeStackNavigator() {
   return (
     <HomeStack.Navigator screenOptions={{ headerShown: false }}>
@@ -36,7 +36,6 @@ function HomeStackNavigator() {
   );
 }
 
-// Condition Tab Stack (with detail screens)
 function ConditionStackNavigator() {
   return (
     <ConditionStack.Navigator screenOptions={{ headerShown: false }}>
@@ -50,7 +49,6 @@ function ConditionStackNavigator() {
   );
 }
 
-// Update Tab Stack
 function UpdateStackNavigator() {
   return (
     <UpdateStack.Navigator screenOptions={{ headerShown: false }}>
@@ -60,7 +58,6 @@ function UpdateStackNavigator() {
   );
 }
 
-// Your Car Tab Stack
 function YourCarStackNavigator() {
   return (
     <YourCarStack.Navigator screenOptions={{ headerShown: false }}>
@@ -69,7 +66,6 @@ function YourCarStackNavigator() {
   );
 }
 
-// Driver Tab Stack
 function DriverStackNavigator() {
   return (
     <DriverStack.Navigator screenOptions={{ headerShown: false }}>
@@ -78,46 +74,46 @@ function DriverStackNavigator() {
   );
 }
 
-// Tab Bar Icons
-function TabIcon({ name, color, size }: { name: string; color: string; size: number }) {
-  return <Ionicons name={name as any} size={size} color={color} />;
+function TabIcon({ name, color, size, focused }: { name: string; color: string; size: number; focused: boolean }) {
+  return (
+    <View style={focused ? styles.activeIconWrap : undefined}>
+      <Ionicons name={name as any} size={size - 2} color={color} />
+    </View>
+  );
 }
 
-// Main Demo Navigator - switches between uninitialized (Stack only) and initialized (Tabs)
 function DemoMainNavigator() {
   const { isInitialized } = useDemoState();
   const insets = useSafeAreaInsets();
 
-  // When not initialized, only show home screen without tabs
   if (!isInitialized) {
     return <HomeStackNavigator />;
   }
 
-  // When initialized, show full tab navigator
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
         tabBarStyle: [
           styles.tabBar,
-          { 
-            paddingBottom: Math.max(insets.bottom, 8), 
-            height: 70 + insets.bottom 
+          {
+            paddingBottom: Math.max(insets.bottom, 10),
+            height: 68 + insets.bottom,
           },
         ],
-        tabBarActiveTintColor: '#00FF41',
-        tabBarInactiveTintColor: '#64748b',
-        tabBarLabelStyle: styles.tabBarLabel,
-        tabBarItemStyle: styles.tabBarItem,
+        tabBarActiveTintColor: T.accent,
+        tabBarInactiveTintColor: T.textMuted,
+        tabBarLabelStyle: styles.tabLabel,
+        tabBarItemStyle: styles.tabItem,
       }}
     >
       <Tab.Screen
         name="HomeTab"
         component={HomeStackNavigator}
         options={{
-          tabBarLabel: 'HOME',
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon name="home" color={color} size={size} />
+          tabBarLabel: 'Home',
+          tabBarIcon: ({ color, size, focused }) => (
+            <TabIcon name="home-outline" color={color} size={size} focused={focused} />
           ),
         }}
       />
@@ -125,9 +121,9 @@ function DemoMainNavigator() {
         name="ConditionTab"
         component={ConditionStackNavigator}
         options={{
-          tabBarLabel: 'CONDITION',
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon name="build" color={color} size={size} />
+          tabBarLabel: 'Health',
+          tabBarIcon: ({ color, size, focused }) => (
+            <TabIcon name="pulse-outline" color={color} size={size} focused={focused} />
           ),
         }}
       />
@@ -135,9 +131,9 @@ function DemoMainNavigator() {
         name="UpdateTab"
         component={UpdateStackNavigator}
         options={{
-          tabBarLabel: 'UPDATE',
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon name="add-circle-outline" color={color} size={size} />
+          tabBarLabel: 'Update',
+          tabBarIcon: ({ color, size, focused }) => (
+            <TabIcon name="cloud-upload-outline" color={color} size={size} focused={focused} />
           ),
         }}
       />
@@ -145,9 +141,9 @@ function DemoMainNavigator() {
         name="YourCarTab"
         component={YourCarStackNavigator}
         options={{
-          tabBarLabel: 'YOUR CAR',
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon name="car-sport-outline" color={color} size={size} />
+          tabBarLabel: 'My Car',
+          tabBarIcon: ({ color, size, focused }) => (
+            <TabIcon name="car-sport-outline" color={color} size={size} focused={focused} />
           ),
         }}
       />
@@ -155,9 +151,9 @@ function DemoMainNavigator() {
         name="DriverTab"
         component={DriverStackNavigator}
         options={{
-          tabBarLabel: 'DRIVER',
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon name="speedometer-outline" color={color} size={size} />
+          tabBarLabel: 'Profile',
+          tabBarIcon: ({ color, size, focused }) => (
+            <TabIcon name="person-outline" color={color} size={size} focused={focused} />
           ),
         }}
       />
@@ -165,7 +161,6 @@ function DemoMainNavigator() {
   );
 }
 
-// Export the wrapped navigator with context provider
 export function DemoNavigator() {
   return (
     <DemoStateProvider>
@@ -176,18 +171,26 @@ export function DemoNavigator() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: '#000000',
-    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: T.bgCard,
     borderTopWidth: 1,
-    paddingTop: 8,
+    borderTopColor: T.border,
+    paddingTop: 6,
+    elevation: 0,
+    shadowOpacity: 0,
   },
-  tabBarLabel: {
-    fontSize: 9,
-    fontWeight: 'bold',
-    letterSpacing: 0.5,
-    marginTop: 4,
+  tabLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+    marginTop: 2,
   },
-  tabBarItem: {
+  tabItem: {
+    paddingVertical: 2,
+  },
+  activeIconWrap: {
+    backgroundColor: T.accentDim,
+    borderRadius: T.r.sm,
+    paddingHorizontal: 14,
     paddingVertical: 4,
   },
 });

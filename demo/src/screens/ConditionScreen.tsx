@@ -6,234 +6,114 @@ import { Ionicons } from '@expo/vector-icons';
 import { useDemoState } from '../context/DemoStateContext';
 import { DemoHeader, HealthBar, ImprovementCard } from '../components';
 import { getMaintenanceItems } from '../data/carProfiles';
+import { T, healthColor } from '../theme';
 
-const IMPROVEMENT_TYPES = [
-  { id: 'all', label: 'All Types' },
+const FILTERS = [
+  { id: 'all', label: 'All' },
   { id: 'urgent', label: 'Urgent' },
-  { id: 'recommended', label: 'Recommended' },
-];
+  { id: 'recommended', label: 'Attention' },
+] as const;
 
 export function ConditionScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const { state, selectedCar } = useDemoState();
   const [filterType, setFilterType] = useState('all');
-  const [showFilter, setShowFilter] = useState(false);
 
-  const maintenanceItems = getMaintenanceItems(state.metrics);
-  
-  const filteredItems = filterType === 'all' 
-    ? maintenanceItems 
-    : filterType === 'urgent'
-    ? maintenanceItems.filter(item => item.warningLevel === 'red')
-    : maintenanceItems.filter(item => item.warningLevel === 'yellow');
+  const items = getMaintenanceItems(state.metrics);
+  const filtered =
+    filterType === 'all' ? items :
+    filterType === 'urgent' ? items.filter(i => i.warningLevel === 'red') :
+    items.filter(i => i.warningLevel === 'yellow');
 
-  const handleItemPress = (itemId: string) => {
-    // Navigate to detail screen based on item type
-    switch (itemId) {
-      case 'oil':
-        navigation.navigate('OilDetail');
-        break;
-      case 'water':
-        navigation.navigate('WaterDetail');
-        break;
-      case 'tires':
-        navigation.navigate('TiresDetail');
-        break;
-      case 'mandatoryChecks':
-        navigation.navigate('MandatoryChecksDetail');
-        break;
-      case 'waterPump':
-        navigation.navigate('WaterPumpDetail');
-        break;
-    }
+  const handleItemPress = (id: string) => {
+    const map: Record<string, string> = {
+      oil: 'OilDetail', water: 'WaterDetail', tires: 'TiresDetail',
+      mandatoryChecks: 'MandatoryChecksDetail', waterPump: 'WaterPumpDetail',
+    };
+    if (map[id]) navigation.navigate(map[id]);
   };
 
+  const color = healthColor(state.currentHealth);
+
   return (
-    <View style={[styles.container, { paddingBottom: insets.bottom }]}>
-      <DemoHeader
-        showBack
-        onBack={() => navigation.goBack()}
-        showCarDropdown
-        carName={selectedCar.name}
-      />
-      
-      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
-        {/* Title */}
-        <Text style={styles.title}>IMPROVE CAR'S CONDITION</Text>
-        
-        {/* Car Image with Bluetooth */}
-        <View style={styles.carSection}>
-          <View style={styles.carImageContainer}>
-            <Text style={styles.carEmoji}>🚗</Text>
-            <View style={styles.bluetoothIcon}>
-              <Ionicons name="bluetooth" size={20} color="#fff" />
-            </View>
-          </View>
-          
-          <View style={styles.percentageContainer}>
-            <Text style={styles.percentage}>{Math.round(state.currentHealth)}</Text>
-            <Text style={styles.percentageSymbol}>%</Text>
+    <View style={[styles.screen, { paddingBottom: insets.bottom }]}>
+      <DemoHeader showBack onBack={() => navigation.goBack()} showCarDropdown carName={selectedCar?.name} />
+
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.inner}>
+        {/* Hero section */}
+        <View style={styles.hero}>
+          <Ionicons name="car-sport" size={52} color={T.textMuted} />
+          <View style={styles.heroRight}>
+            <Text style={[styles.heroPct, { color }]}>{Math.round(state.currentHealth)}</Text>
+            <Text style={[styles.heroPctSign, { color }]}>%</Text>
           </View>
         </View>
-        
-        {/* Health Bar */}
-        <View style={styles.healthBarContainer}>
-          <HealthBar percentage={state.currentHealth} height={12} />
-          <Text style={styles.lastSync}>LAST SYNC: {state.lastSyncDate}</Text>
+
+        <View style={styles.barWrap}>
+          <HealthBar percentage={state.currentHealth} height={10} />
+          <Text style={styles.syncLabel}>Last sync: {state.lastSyncDate}</Text>
         </View>
-        
-        {/* Filter Dropdown */}
-        <TouchableOpacity 
-          style={styles.filterDropdown}
-          onPress={() => setShowFilter(!showFilter)}
-        >
-          <Text style={styles.filterText}>
-            {IMPROVEMENT_TYPES.find(t => t.id === filterType)?.label || 'IMPROVEMENT TYPE'}
-          </Text>
-          <Ionicons name="chevron-down" size={16} color="#fff" />
-        </TouchableOpacity>
-        
-        {showFilter && (
-          <View style={styles.filterOptions}>
-            {IMPROVEMENT_TYPES.map(type => (
+
+        {/* Filter pills */}
+        <View style={styles.pills}>
+          {FILTERS.map(f => {
+            const active = f.id === filterType;
+            return (
               <TouchableOpacity
-                key={type.id}
-                style={[
-                  styles.filterOption,
-                  filterType === type.id && styles.filterOptionSelected,
-                ]}
-                onPress={() => {
-                  setFilterType(type.id);
-                  setShowFilter(false);
-                }}
+                key={f.id}
+                style={[styles.pill, active && styles.pillActive]}
+                onPress={() => setFilterType(f.id)}
+                activeOpacity={0.7}
               >
-                <Text style={styles.filterOptionText}>{type.label}</Text>
+                <Text style={[styles.pillText, active && styles.pillTextActive]}>{f.label}</Text>
               </TouchableOpacity>
-            ))}
+            );
+          })}
+        </View>
+
+        {/* Items */}
+        {filtered.map(item => (
+          <ImprovementCard key={item.id} item={item} onPress={() => handleItemPress(item.id)} />
+        ))}
+
+        {filtered.length === 0 && (
+          <View style={styles.emptyWrap}>
+            <Ionicons name="checkmark-circle-outline" size={40} color={T.ok} />
+            <Text style={styles.emptyText}>No items match this filter</Text>
           </View>
         )}
-        
-        {/* Improvement Cards */}
-        <View style={styles.itemsContainer}>
-          {filteredItems.map(item => (
-            <ImprovementCard
-              key={item.id}
-              item={item}
-              onPress={() => handleItemPress(item.id)}
-            />
-          ))}
-          
-          {filteredItems.length === 0 && (
-            <Text style={styles.emptyText}>No items match the selected filter</Text>
-          )}
-        </View>
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000000',
+  screen: { flex: 1, backgroundColor: T.bg },
+  scroll: { flex: 1 },
+  inner: { paddingHorizontal: 20, paddingBottom: 28 },
+
+  hero: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    marginVertical: 20, gap: 24,
   },
-  content: {
-    flex: 1,
+  heroRight: { flexDirection: 'row', alignItems: 'flex-end' },
+  heroPct: { fontSize: 52, fontWeight: '200', letterSpacing: -2 },
+  heroPctSign: { fontSize: 22, fontWeight: '300', marginBottom: 10, marginLeft: 2 },
+
+  barWrap: { marginBottom: 20 },
+  syncLabel: { color: T.textMuted, fontSize: 11, marginTop: 8, letterSpacing: 0.3 },
+
+  pills: { flexDirection: 'row', gap: 8, marginBottom: 18 },
+  pill: {
+    paddingHorizontal: 16, paddingVertical: 8,
+    borderRadius: T.r.full, backgroundColor: T.bgCard,
+    borderWidth: 1, borderColor: T.border,
   },
-  contentContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 24,
-  },
-  title: {
-    color: '#00FF41',
-    fontSize: 14,
-    letterSpacing: 4,
-    textAlign: 'center',
-    marginVertical: 16,
-  },
-  carSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  carImageContainer: {
-    position: 'relative',
-  },
-  carEmoji: {
-    fontSize: 80,
-  },
-  bluetoothIcon: {
-    position: 'absolute',
-    top: -8,
-    right: -16,
-  },
-  percentageContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginLeft: 20,
-  },
-  percentage: {
-    color: '#fff',
-    fontSize: 48,
-    fontWeight: '300',
-  },
-  percentageSymbol: {
-    color: '#fff',
-    fontSize: 20,
-    marginTop: 8,
-  },
-  healthBarContainer: {
-    marginBottom: 20,
-  },
-  lastSync: {
-    color: '#34d399',
-    fontSize: 11,
-    marginTop: 8,
-    letterSpacing: 0.5,
-  },
-  filterDropdown: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#1a1a1a',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 0,
-    alignSelf: 'flex-start',
-    marginBottom: 16,
-    gap: 8,
-  },
-  filterText: {
-    color: '#fff',
-    fontSize: 12,
-    letterSpacing: 0.5,
-  },
-  filterOptions: {
-    backgroundColor: '#1a1a2e',
-    borderRadius: 0,
-    marginBottom: 16,
-    overflow: 'hidden',
-  },
-  filterOption: {
-    padding: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  filterOptionSelected: {
-    backgroundColor: 'rgba(34, 197, 94, 0.1)',
-  },
-  filterOptionText: {
-    color: '#fff',
-    fontSize: 14,
-  },
-  itemsContainer: {
-    flex: 1,
-  },
-  emptyText: {
-    color: '#34d399',
-    textAlign: 'center',
-    marginTop: 32,
-  },
+  pillActive: { backgroundColor: T.accentDim, borderColor: T.accentBorder },
+  pillText: { color: T.textSoft, fontSize: 13, fontWeight: '600' },
+  pillTextActive: { color: T.accent },
+
+  emptyWrap: { alignItems: 'center', marginTop: 40, gap: 12 },
+  emptyText: { color: T.textSoft, fontSize: 14 },
 });

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { MaintenanceItem } from '../types';
+import { T } from '../theme';
 
 interface ImprovementCardProps {
   item: MaintenanceItem;
@@ -9,80 +10,73 @@ interface ImprovementCardProps {
 }
 
 export function ImprovementCard({ item, onPress }: ImprovementCardProps) {
-  const getWarningColor = () => {
-    switch (item.warningLevel) {
-      case 'red':
-        return '#EF4444';
-      case 'yellow':
-        return '#F59E0B';
-      default:
-        return 'transparent';
-    }
-  };
+  const warnColor =
+    item.warningLevel === 'red' ? T.bad :
+    item.warningLevel === 'yellow' ? T.warn : T.ok;
+
+  const warnBg =
+    item.warningLevel === 'red' ? T.badDim :
+    item.warningLevel === 'yellow' ? T.warnDim : T.okDim;
 
   return (
-    <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.7}>
-      <View style={styles.iconContainer}>
-        <Ionicons name={item.icon as any} size={24} color="#fff" />
+    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
+      {/* Left accent strip */}
+      <View style={[styles.strip, { backgroundColor: item.hasWarning ? warnColor : T.ok }]} />
+
+      <View style={[styles.iconWrap, { backgroundColor: warnBg }]}>  
+        <Ionicons name={item.icon as any} size={20} color={warnColor} />
       </View>
-      
-      <View style={styles.content}>
-        <View style={styles.titleRow}>
-          <Text style={styles.title}>{item.title}</Text>
-          {item.hasWarning && (
-            <View style={[styles.warningDot, { backgroundColor: getWarningColor() }]} />
-          )}
-        </View>
-        <Text style={[styles.subtitle, item.hasWarning && { color: getWarningColor() }]}>
+
+      <View style={styles.body}>
+        <Text style={styles.title}>{item.title}</Text>
+        <Text style={[styles.sub, { color: item.hasWarning ? warnColor : T.textSoft }]}>
           {item.subtitle}
         </Text>
       </View>
-      
-      <Ionicons name="chevron-forward" size={20} color="#64748b" />
+
+      <Ionicons name="chevron-forward" size={18} color={T.textMuted} />
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1a1a1a',
-    borderRadius: 0,
-    padding: 24,
-    marginBottom: 8,
+    backgroundColor: T.bgCard,
+    borderRadius: T.r.lg,
+    borderWidth: 1,
+    borderColor: T.border,
+    padding: 16,
+    marginBottom: 10,
+    overflow: 'hidden',
   },
-  iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  strip: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 3,
+    borderTopLeftRadius: T.r.lg,
+    borderBottomLeftRadius: T.r.lg,
+  },
+  iconWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: T.r.sm,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: 14,
   },
-  content: {
-    flex: 1,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
+  body: { flex: 1 },
   title: {
-    color: '#fff',
+    color: T.text,
     fontSize: 14,
-    fontWeight: 'bold',
-    letterSpacing: 0.5,
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
-  warningDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 0,
-  },
-  subtitle: {
-    color: '#34d399',
+  sub: {
     fontSize: 12,
-    marginTop: 2,
+    marginTop: 3,
   },
 });

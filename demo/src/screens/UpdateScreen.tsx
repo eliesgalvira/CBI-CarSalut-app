@@ -2,54 +2,30 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
 import { DemoHeader, ActionCard } from '../components';
+import { T } from '../theme';
 
 export function UpdateScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
 
-  const handlePhotoRegister = () => {
-    navigation.navigate('PhotoRegister');
-  };
-
-  const handleActionPress = (action: string) => {
-    Alert.alert(action, `This would open the ${action.toLowerCase()} feature.`);
-  };
+  const handlePhotoRegister = () => navigation.navigate('PhotoRegister');
+  const handleAction = (name: string) =>
+    Alert.alert(name, `This would open the ${name.toLowerCase()} feature.`);
 
   return (
-    <View style={[styles.container, { paddingBottom: insets.bottom }]}>
-      <DemoHeader
-        showBack
-        onBack={() => navigation.goBack()}
-        title="Upload Update"
-      />
-      
-      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
-        {/* Choose Upload Method */}
-        <Text style={styles.stepLabel}>CHOOSE HOW TO UPLOAD</Text>
-        
-        <View style={styles.actionGrid}>
-          <ActionCard
-            icon="camera-outline"
-            label="Photo Register"
-            onPress={handlePhotoRegister}
-          />
-          <ActionCard
-            icon="cloud-upload-outline"
-            label="Upload Document"
-            onPress={() => handleActionPress('Upload Document')}
-          />
-          <ActionCard
-            icon="document-text-outline"
-            label="New Activity"
-            onPress={() => handleActionPress('New Activity')}
-          />
-          <ActionCard
-            icon="home-outline"
-            label="Register Garage"
-            onPress={() => handleActionPress('Register Garage')}
-          />
+    <View style={[styles.screen, { paddingBottom: insets.bottom }]}>
+      <DemoHeader showBack onBack={() => navigation.goBack()} title="Upload Update" />
+
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.inner}>
+        <Text style={styles.heading}>Choose how to upload</Text>
+        <Text style={styles.sub}>Select an upload method to update your car's records</Text>
+
+        <View style={styles.grid}>
+          <ActionCard icon="camera-outline" label="Photo Register" onPress={handlePhotoRegister} />
+          <ActionCard icon="cloud-upload-outline" label="Upload Document" onPress={() => handleAction('Upload Document')} />
+          <ActionCard icon="document-text-outline" label="New Activity" onPress={() => handleAction('New Activity')} />
+          <ActionCard icon="home-outline" label="Register Garage" onPress={() => handleAction('Register Garage')} />
         </View>
       </ScrollView>
     </View>
@@ -57,27 +33,10 @@ export function UpdateScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000000',
-  },
-  content: {
-    flex: 1,
-  },
-  contentContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 24,
-  },
-  stepLabel: {
-    color: '#34d399',
-    fontSize: 12,
-    letterSpacing: 1,
-    marginTop: 24,
-    marginBottom: 16,
-  },
-  actionGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
+  screen: { flex: 1, backgroundColor: T.bg },
+  scroll: { flex: 1 },
+  inner: { paddingHorizontal: 20, paddingBottom: 28 },
+  heading: { color: T.text, fontSize: 20, fontWeight: '700', marginTop: 20, marginBottom: 4 },
+  sub: { color: T.textSoft, fontSize: 14, marginBottom: 24 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
 });

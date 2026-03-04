@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CarProfile } from '../types';
+import { T } from '../theme';
 
 interface CarDropdownProps {
   selectedCar: CarProfile;
@@ -19,41 +20,41 @@ export function CarDropdown({ selectedCar, cars, onSelect }: CarDropdownProps) {
 
   return (
     <>
-      <TouchableOpacity style={styles.dropdown} onPress={() => setIsOpen(true)}>
-        <Text style={styles.dropdownText}>{selectedCar.name}</Text>
-        <Ionicons name="chevron-down" size={16} color="#fff" />
+      <TouchableOpacity style={styles.trigger} onPress={() => setIsOpen(true)} activeOpacity={0.7}>
+        <Ionicons name="car-sport-outline" size={16} color={T.accent} />
+        <Text style={styles.triggerText}>{selectedCar.name}</Text>
+        <Ionicons name="chevron-down" size={14} color={T.textSoft} />
       </TouchableOpacity>
 
-      <Modal
-        visible={isOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setIsOpen(false)}
-      >
-        <Pressable style={styles.modalOverlay} onPress={() => setIsOpen(false)}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Select Your Car</Text>
+      <Modal visible={isOpen} transparent animationType="fade" onRequestClose={() => setIsOpen(false)}>
+        <Pressable style={styles.overlay} onPress={() => setIsOpen(false)}>
+          <View style={styles.sheet}>
+            <View style={styles.handle} />
+            <Text style={styles.sheetTitle}>Select Vehicle</Text>
+
             <FlatList
               data={cars}
               keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={[
-                    styles.carItem,
-                    item.id === selectedCar.id && styles.carItemSelected,
-                  ]}
-                  onPress={() => handleSelect(item.id)}
-                >
-                  <View style={styles.carItemContent}>
-                    <Text style={styles.carBrand}>{item.brand}</Text>
-                    <Text style={styles.carModel}>{item.model} {item.year}</Text>
-                    <Text style={styles.carDetails}>{item.kilometers.toLocaleString()} km • {item.fuelType}</Text>
-                  </View>
-                  {item.id === selectedCar.id && (
-                    <Ionicons name="checkmark-circle" size={24} color="#00FF41" />
-                  )}
-                </TouchableOpacity>
-              )}
+              renderItem={({ item }) => {
+                const active = item.id === selectedCar.id;
+                return (
+                  <TouchableOpacity
+                    style={[styles.carRow, active && styles.carRowActive]}
+                    onPress={() => handleSelect(item.id)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[styles.carIcon, active && styles.carIconActive]}>
+                      <Ionicons name="car-sport" size={20} color={active ? T.accent : T.textMuted} />
+                    </View>
+                    <View style={styles.carInfo}>
+                      <Text style={styles.carBrand}>{item.brand}</Text>
+                      <Text style={styles.carModel}>{item.model} {item.year}</Text>
+                      <Text style={styles.carMeta}>{item.kilometers.toLocaleString()} km  ·  {item.fuelType}</Text>
+                    </View>
+                    {active && <Ionicons name="checkmark-circle" size={22} color={T.accent} />}
+                  </TouchableOpacity>
+                );
+              }}
             />
           </View>
         </Pressable>
@@ -63,74 +64,94 @@ export function CarDropdown({ selectedCar, cars, onSelect }: CarDropdownProps) {
 }
 
 const styles = StyleSheet.create({
-  dropdown: {
+  trigger: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: T.bgCard,
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 0,
+    borderRadius: T.r.full,
     borderWidth: 1,
-    borderColor: '#00FF41',
+    borderColor: T.accentBorder,
     gap: 8,
     alignSelf: 'center',
   },
-  dropdownText: {
-    color: '#fff',
+  triggerText: {
+    color: T.text,
     fontSize: 14,
-    fontWeight: 'bold',
-    letterSpacing: 0.5,
+    fontWeight: '600',
   },
-  modalOverlay: {
+  overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'center',
-    padding: 24,
+    backgroundColor: T.bgOverlay,
+    justifyContent: 'flex-end',
   },
-  modalContent: {
-    backgroundColor: '#1a1a2e',
-    borderRadius: 0,
-    padding: 32,
-    maxHeight: '60%',
+  sheet: {
+    backgroundColor: T.bgElevated,
+    borderTopLeftRadius: T.r.xl,
+    borderTopRightRadius: T.r.xl,
+    paddingTop: 12,
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+    maxHeight: '65%',
   },
-  modalTitle: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    textAlign: 'center',
+  handle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: T.borderLight,
+    alignSelf: 'center',
+    marginBottom: 20,
   },
-  carItem: {
+  sheetTitle: {
+    color: T.text,
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 18,
+  },
+  carRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 24,
-    borderRadius: 0,
+    padding: 16,
+    borderRadius: T.r.md,
     marginBottom: 8,
-    backgroundColor: '#1a1a1a',
-  },
-  carItemSelected: {
-    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+    backgroundColor: T.bgCard,
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.3)',
+    borderColor: T.border,
   },
-  carItemContent: {
-    flex: 1,
+  carRowActive: {
+    borderColor: T.accentBorder,
+    backgroundColor: T.accentDim,
   },
+  carIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: T.r.sm,
+    backgroundColor: T.bgElevated,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+  carIconActive: {
+    backgroundColor: T.accentDim,
+  },
+  carInfo: { flex: 1 },
   carBrand: {
-    color: '#00FF41',
-    fontSize: 12,
-    letterSpacing: 1,
+    color: T.accent,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.8,
     textTransform: 'uppercase',
   },
   carModel: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+    color: T.text,
+    fontSize: 15,
+    fontWeight: '600',
     marginTop: 2,
   },
-  carDetails: {
-    color: '#34d399',
+  carMeta: {
+    color: T.textSoft,
     fontSize: 12,
-    marginTop: 4,
+    marginTop: 3,
   },
 });

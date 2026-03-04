@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { T } from '../theme';
 
 interface DemoButtonProps {
   label: string;
@@ -19,21 +20,21 @@ interface DemoButtonProps {
   style?: ViewStyle;
 }
 
-const variantStyles = {
+const variants = {
   primary: {
-    backgroundColor: '#00FF41',
-    borderColor: '#00FF41',
-    textColor: '#ffffff',
+    bg: T.accent,
+    border: T.accent,
+    text: '#fff',
   },
   secondary: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderColor: '#00FF41',
-    textColor: '#ffffff',
+    bg: T.accentDim,
+    border: T.accentBorder,
+    text: T.accent,
   },
   outline: {
-    backgroundColor: 'transparent',
-    borderColor: '#00FF41',
-    textColor: '#00FF41',
+    bg: 'transparent',
+    border: T.borderLight,
+    text: T.textSoft,
   },
 };
 
@@ -46,17 +47,13 @@ export function DemoButton({
   disabled = false,
   style,
 }: DemoButtonProps) {
-  const colors = variantStyles[variant];
+  const v = variants[variant];
 
   return (
     <TouchableOpacity
       style={[
-        styles.button,
-        {
-          backgroundColor: colors.backgroundColor,
-          borderColor: colors.borderColor,
-          opacity: disabled ? 0.5 : 1,
-        },
+        styles.btn,
+        { backgroundColor: v.bg, borderColor: v.border, opacity: disabled ? 0.45 : 1 },
         style,
       ]}
       onPress={onPress}
@@ -64,13 +61,11 @@ export function DemoButton({
       activeOpacity={0.7}
     >
       {loading ? (
-        <ActivityIndicator color={colors.textColor} size="small" />
+        <ActivityIndicator color={v.text} size="small" />
       ) : (
-        <View style={styles.content}>
-          <Text style={[styles.label, { color: colors.textColor }]}>{label}</Text>
-          {icon && (
-            <Ionicons name={icon as any} size={20} color={colors.textColor} style={styles.icon} />
-          )}
+        <View style={styles.inner}>
+          {icon && <Ionicons name={icon as any} size={18} color={v.text} style={styles.icon} />}
+          <Text style={[styles.label, { color: v.text }]}>{label}</Text>
         </View>
       )}
     </TouchableOpacity>
@@ -78,26 +73,23 @@ export function DemoButton({
 }
 
 const styles = StyleSheet.create({
-  button: {
-    height: 56,
+  btn: {
+    height: 52,
     paddingHorizontal: 24,
-    borderRadius: 0,
-    borderWidth: 2,
+    borderRadius: T.r.md,
+    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  content: {
+  inner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
   label: {
     fontSize: 14,
-    fontWeight: 'bold',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
+    fontWeight: '700',
+    letterSpacing: 0.4,
   },
-  icon: {
-    marginLeft: 4,
-  },
+  icon: {},
 });

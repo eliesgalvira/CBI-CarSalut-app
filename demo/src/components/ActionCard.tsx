@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { T } from '../theme';
 
 interface ActionCardProps {
   icon: string;
@@ -10,9 +11,9 @@ interface ActionCardProps {
 
 export function ActionCard({ icon, label, onPress }: ActionCardProps) {
   return (
-    <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.7}>
-      <View style={styles.iconContainer}>
-        <Ionicons name={icon as any} size={40} color="#fff" />
+    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
+      <View style={styles.iconWrap}>
+        <Ionicons name={icon as any} size={28} color={T.accent} />
       </View>
       <Text style={styles.label}>{label}</Text>
     </TouchableOpacity>
@@ -20,27 +21,32 @@ export function ActionCard({ icon, label, onPress }: ActionCardProps) {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  card: {
     width: '47%',
-    aspectRatio: 1.2,
-    backgroundColor: '#1a1a1a',
-    borderRadius: 0,
+    aspectRatio: 1.15,
+    backgroundColor: T.bgCard,
+    borderRadius: T.r.lg,
     borderWidth: 1,
-    borderColor: '#00FF41',
+    borderColor: T.border,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 24,
-    marginBottom: 12,
+    padding: 20,
+    marginBottom: 14,
   },
-  iconContainer: {
-    marginBottom: 12,
+  iconWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: T.r.md,
+    backgroundColor: T.accentDim,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
   },
   label: {
-    color: '#fff',
+    color: T.text,
     fontSize: 12,
-    fontWeight: 'bold',
+    fontWeight: '600',
     textAlign: 'center',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.2,
   },
 });

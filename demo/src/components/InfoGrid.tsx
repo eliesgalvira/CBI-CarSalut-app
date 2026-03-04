@@ -1,50 +1,43 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { CarProfile } from '../types';
+import { T } from '../theme';
 
 interface InfoGridProps {
   car: CarProfile;
 }
 
+function Cell({ label, value, wide }: { label: string; value: string; wide?: boolean }) {
+  return (
+    <View style={[styles.cell, wide && styles.cellWide]}>
+      <Text style={styles.cellLabel}>{label}</Text>
+      <Text style={[styles.cellValue, wide && styles.cellValueBig]}>{value}</Text>
+    </View>
+  );
+}
+
 export function InfoGrid({ car }: InfoGridProps) {
   return (
     <View style={styles.container}>
-      {/* Full Model Row */}
-      <View style={styles.fullRow}>
-        <Text style={styles.label}>MODEL.</Text>
-        <Text style={styles.valueMain}>{car.fullModel}</Text>
+      <Cell label="MODEL" value={car.fullModel} wide />
+
+      <View style={styles.divider} />
+
+      <View style={styles.row}>
+        <Cell label="REGISTERED" value={car.registerDate} />
+        <Cell label="MILEAGE" value={`${car.kilometers.toLocaleString()} km`} />
       </View>
 
-      {/* 4-Column Grid */}
-      <View style={styles.grid}>
-        <View style={styles.gridItem}>
-          <Text style={styles.label}>REGISTER.</Text>
-          <Text style={styles.value}>{car.registerDate}</Text>
-        </View>
-        <View style={styles.gridItem}>
-          <Text style={styles.label}>KM.</Text>
-          <Text style={styles.value}>{car.kilometers.toLocaleString()}</Text>
-        </View>
-        <View style={styles.gridItem}>
-          <Text style={styles.label}>TYPE.</Text>
-          <Text style={styles.value}>{car.fuelType.toUpperCase()}</Text>
-        </View>
-        <View style={styles.gridItem}>
-          <Text style={styles.label}>GEAR.</Text>
-          <Text style={styles.value}>{car.gearType.toUpperCase()}</Text>
-        </View>
+      <View style={styles.row}>
+        <Cell label="FUEL" value={car.fuelType.toUpperCase()} />
+        <Cell label="TRANSMISSION" value={car.gearType.toUpperCase()} />
       </View>
 
-      {/* 2-Column Row */}
-      <View style={styles.twoColGrid}>
-        <View style={styles.twoColItem}>
-          <Text style={styles.label}>POTENCE</Text>
-          <Text style={styles.value}>{car.power}</Text>
-        </View>
-        <View style={styles.twoColItem}>
-          <Text style={styles.label}>TRACTION</Text>
-          <Text style={styles.value}>{car.traction.toUpperCase()}</Text>
-        </View>
+      <View style={styles.divider} />
+
+      <View style={styles.row}>
+        <Cell label="POWER" value={car.power} />
+        <Cell label="DRIVETRAIN" value={car.traction.toUpperCase()} />
       </View>
     </View>
   );
@@ -52,52 +45,43 @@ export function InfoGrid({ car }: InfoGridProps) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#1a1a1a',
-    borderRadius: 0,
-    padding: 24,
+    backgroundColor: T.bgCard,
+    borderRadius: T.r.lg,
+    borderWidth: 1,
+    borderColor: T.border,
+    padding: 20,
   },
-  fullRow: {
-    alignItems: 'center',
-    marginBottom: 16,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  grid: {
+  row: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  gridItem: {
-    width: '24%',
-    alignItems: 'center',
     marginBottom: 8,
   },
-  twoColGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+  cell: {
+    flex: 1,
+    paddingVertical: 6,
   },
-  twoColItem: {
+  cellWide: {
     alignItems: 'center',
+    paddingBottom: 4,
   },
-  label: {
-    color: '#34d399',
+  cellLabel: {
+    color: T.accent,
     fontSize: 10,
-    letterSpacing: 0.5,
+    fontWeight: '700',
+    letterSpacing: 0.8,
     marginBottom: 4,
   },
-  value: {
-    color: '#fff',
-    fontSize: 12,
+  cellValue: {
+    color: T.text,
+    fontSize: 13,
     fontWeight: '500',
   },
-  valueMain: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: 'bold',
+  cellValueBig: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: T.border,
+    marginVertical: 10,
   },
 });

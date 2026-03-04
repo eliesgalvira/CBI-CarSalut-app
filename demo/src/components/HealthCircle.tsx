@@ -7,6 +7,7 @@ import Animated, {
   withTiming,
   Easing,
 } from 'react-native-reanimated';
+import { T, healthColor } from '../theme';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -14,27 +15,25 @@ interface HealthCircleProps {
   percentage: number;
   size?: number;
   strokeWidth?: number;
-  showCar?: boolean;
+  label?: string;
 }
 
 export function HealthCircle({
   percentage,
-  size = 220,
-  strokeWidth = 12,
-  showCar = true,
+  size = 230,
+  strokeWidth = 14,
+  label = 'CONDITION',
 }: HealthCircleProps) {
   const progress = useSharedValue(0);
-  
+
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const center = size / 2;
 
   useEffect(() => {
-    // Clamp percentage between 0 and 100
-    const clampedPercentage = Math.min(100, Math.max(0, percentage));
-    progress.value = withTiming(clampedPercentage / 100, {
-      duration: 1000,
-      easing: Easing.bezierFn(0.25, 0.1, 0.25, 1),
+    progress.value = withTiming(Math.min(100, Math.max(0, percentage)) / 100, {
+      duration: 1200,
+      easing: Easing.bezierFn(0.22, 1, 0.36, 1),
     });
   }, [percentage, progress]);
 
@@ -42,46 +41,41 @@ export function HealthCircle({
     strokeDashoffset: circumference * (1 - progress.value),
   }));
 
-  // Determine color based on percentage
-  const getColor = () => {
-    if (percentage >= 70) return '#00FF41'; // Green
-    if (percentage >= 50) return '#F59E0B'; // Amber
-    return '#EF4444'; // Red
-  };
-
-  // Use explicit strokeDasharray value
+  const color = healthColor(percentage);
   const dashArray = `${circumference} ${circumference}`;
 
   return (
     <View style={styles.wrapper}>
-      {/* Condition label above the circle */}
-      <Text style={styles.conditionLabel}>CONDITION</Text>
-      
-      <View style={[styles.container, { width: size, height: size }]}>
-        <Svg width={size} height={size} style={styles.svg}>
+      {label ? <Text style={styles.label}>{label}</Text> : null}
+
+      <View style={[styles.ring, { width: size, height: size }]}>
+        {/* Glow backing */}
+        <View style={[styles.glowOuter, { width: size + 24, height: size + 24, borderRadius: (size + 24) / 2, shadowColor: color }]} />
+
+        <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
           <Defs>
-            <LinearGradient id="healthGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <Stop offset="0%" stopColor={getColor()} />
-              <Stop offset="100%" stopColor={getColor()} stopOpacity={0.8} />
+            <LinearGradient id="hg" x1="0%" y1="0%" x2="100%" y2="100%">
+              <Stop offset="0%" stopColor={color} stopOpacity={1} />
+              <Stop offset="100%" stopColor={color} stopOpacity={0.55} />
             </LinearGradient>
           </Defs>
-          
-          {/* Background circle */}
+
+          {/* Track */}
           <Circle
             cx={center}
             cy={center}
             r={radius}
-            stroke="rgba(255, 255, 255, 0.1)"
+            stroke={T.bgElevated}
             strokeWidth={strokeWidth}
             fill="none"
           />
-          
-          {/* Progress circle */}
+
+          {/* Progress */}
           <AnimatedCircle
             cx={center}
             cy={center}
             r={radius}
-            stroke="url(#healthGradient)"
+            stroke="url(#hg)"
             strokeWidth={strokeWidth}
             fill="none"
             strokeDasharray={dashArray}
@@ -90,19 +84,11 @@ export function HealthCircle({
             transform={`rotate(-90 ${center} ${center})`}
           />
         </Svg>
-        
-        {/* Content inside circle */}
-        <View style={styles.content}>
-          {showCar && (
-            <View style={styles.carPlaceholder}>
-              <Text style={styles.carEmoji}>🚗</Text>
-            </View>
-          )}
-          
-          <View style={styles.percentageContainer}>
-            <Text style={styles.percentageValue}>{Math.round(percentage)}</Text>
-            <Text style={styles.percentageSymbol}>%</Text>
-          </View>
+
+        {/* Center content */}
+        <View style={styles.center}>
+          <Text style={[styles.pct, { color }]}>{Math.round(percentage)}</Text>
+          <Text style={[styles.pctSign, { color }]}>%</Text>
         </View>
       </View>
     </View>
@@ -110,46 +96,39 @@ export function HealthCircle({
 }
 
 const styles = StyleSheet.create({
-  wrapper: {
-    alignItems: 'center',
+  wrapper: { alignItems: 'center' },
+  label: {
+    color: T.accent,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 3,
+    marginBottom: 20,
+    textTransform: 'uppercase',
   },
-  conditionLabel: {
-    color: '#00FF41',
-    fontSize: 18,
-    letterSpacing: 4,
-    marginBottom: 25,
-  },
-  container: {
-    position: 'relative',
+  ring: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  svg: {
+  glowOuter: {
     position: 'absolute',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.25,
+    shadowRadius: 28,
+    elevation: 12,
   },
-  content: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  carPlaceholder: {
-    marginVertical: 8,
-  },
-  carEmoji: {
-    fontSize: 48,
-  },
-  percentageContainer: {
+  center: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'flex-end',
   },
-  percentageValue: {
-    color: '#fff',
-    fontSize: 52,
+  pct: {
+    fontSize: 56,
     fontWeight: '200',
+    letterSpacing: -2,
   },
-  percentageSymbol: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: '200',
-    marginTop: 8,
+  pctSign: {
+    fontSize: 22,
+    fontWeight: '300',
+    marginBottom: 10,
+    marginLeft: 2,
   },
 });

@@ -16,6 +16,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { DemoHeader, DemoButton } from '../components';
+import { T } from '../theme';
 
 interface FormData {
   description: string;
@@ -33,15 +34,14 @@ export function PhotoRegisterScreen() {
   const [formData, setFormData] = useState<FormData>({
     description: '',
     category: 'Maintenance',
-    date: new Date().toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
+    date: new Date().toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
     }),
     notes: '',
   });
 
-  // Automatically launch camera when screen opens
   useEffect(() => {
     if (!cameraLaunched) {
       setCameraLaunched(true);
@@ -50,229 +50,132 @@ export function PhotoRegisterScreen() {
   }, []);
 
   const launchCamera = async () => {
-    console.log('[PhotoRegister] launchCamera called');
-    
-    // Request camera permissions
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    console.log('[PhotoRegister] Camera permission status:', status);
-    
     if (status !== 'granted') {
-      Alert.alert(
-        'Permission Required',
-        'Camera permission is required to take photos.',
-        [{ text: 'OK' }]
-      );
+      Alert.alert('Permission Required', 'Camera permission is required to take photos.');
       return;
     }
-
-    // Launch camera
-    console.log('[PhotoRegister] Launching camera...');
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.8,
     });
-
-    console.log('[PhotoRegister] Camera result:', JSON.stringify(result, null, 2));
-
-    if (!result.canceled && result.assets[0]) {
-      const uri = result.assets[0].uri;
-      console.log('[PhotoRegister] Setting photo URI:', uri);
-      setPhoto(uri);
-    } else {
-      console.log('[PhotoRegister] Camera was canceled or no assets');
-    }
-  };
-
-  const handleTakePhoto = async () => {
-    console.log('[PhotoRegister] handleTakePhoto called');
-    await launchCamera();
+    if (!result.canceled && result.assets[0]) setPhoto(result.assets[0].uri);
   };
 
   const handleChooseFromGallery = async () => {
-    // Request gallery permissions
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
     if (status !== 'granted') {
-      Alert.alert(
-        'Permission Required',
-        'Gallery permission is required to select photos.',
-        [{ text: 'OK' }]
-      );
+      Alert.alert('Permission Required', 'Gallery permission is required to select photos.');
       return;
     }
-
-    // Launch image picker
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.8,
     });
-
-    if (!result.canceled && result.assets[0]) {
-      setPhoto(result.assets[0].uri);
-    }
+    if (!result.canceled && result.assets[0]) setPhoto(result.assets[0].uri);
   };
 
   const handleUpload = async () => {
-    if (!photo) {
-      Alert.alert('No Photo', 'Please take or select a photo first.', [{ text: 'OK' }]);
-      return;
-    }
-
-    if (!formData.description.trim()) {
-      Alert.alert('Missing Description', 'Please enter a description.', [{ text: 'OK' }]);
-      return;
-    }
-
+    if (!photo) { Alert.alert('No Photo', 'Please take or select a photo first.'); return; }
+    if (!formData.description.trim()) { Alert.alert('Missing Description', 'Please enter a description.'); return; }
     setUploading(true);
-
-    // Simulate upload delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
+    await new Promise(r => setTimeout(r, 2000));
     setUploading(false);
-
-    Alert.alert(
-      'Upload Complete! 🎉',
-      'Your photo has been registered successfully.',
-      [
-        {
-          text: 'OK',
-          onPress: () => navigation.goBack(),
-        },
-      ]
-    );
+    Alert.alert('Upload Complete', 'Your photo has been registered successfully.', [
+      { text: 'OK', onPress: () => navigation.goBack() },
+    ]);
   };
 
   const categories = ['Maintenance', 'Repair', 'Inspection', 'Damage', 'Other'];
 
-  // Debug logging
-  console.log('[PhotoRegister] Render - photo state:', photo);
-
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <View style={[styles.container, { paddingBottom: insets.bottom }]}>
-        <DemoHeader
-          showBack
-          onBack={() => navigation.goBack()}
-          title="Photo Register"
-        />
-        
-        <ScrollView 
-          style={styles.content} 
-          contentContainerStyle={styles.contentContainer}
-          keyboardShouldPersistTaps="handled"
-        >
+    <KeyboardAvoidingView style={s.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <View style={[s.screen, { paddingBottom: insets.bottom }]}>
+        <DemoHeader showBack onBack={() => navigation.goBack()} title="Photo Register" />
+
+        <ScrollView style={s.flex} contentContainerStyle={s.inner} keyboardShouldPersistTaps="handled">
           {/* Photo Section */}
-          <View style={styles.photoSection}>
+          <View style={s.photoSection}>
             {photo ? (
-              <View style={styles.photoPreviewContainer}>
-                <Image 
-                  key={photo}
-                  source={{ uri: photo }} 
-                  style={{
-                    width: '100%',
-                    height: 250,
-                    borderRadius: 0,
-                  }}
-                  resizeMode="contain"
-                  onLoad={() => console.log('[PhotoRegister] Image onLoad fired for:', photo)}
-                  onError={(e) => console.log('[PhotoRegister] Image load error:', e.nativeEvent.error)}
-                />
-                <TouchableOpacity 
-                  style={styles.removePhotoButton}
-                  onPress={() => setPhoto(null)}
-                >
-                  <Ionicons name="close-circle" size={28} color="#EF4444" />
+              <View style={s.previewWrap}>
+                <Image key={photo} source={{ uri: photo }} style={s.previewImg} resizeMode="contain" />
+                <TouchableOpacity style={s.removeBtn} onPress={() => setPhoto(null)}>
+                  <Ionicons name="close-circle" size={28} color={T.bad} />
                 </TouchableOpacity>
               </View>
             ) : (
-              <View style={styles.photoPlaceholder}>
-                <Ionicons name="camera-outline" size={48} color="#475569" />
-                <Text style={styles.photoPlaceholderText}>No photo selected</Text>
+              <View style={s.placeholder}>
+                <View style={s.placeholderIcon}>
+                  <Ionicons name="camera-outline" size={36} color={T.textMuted} />
+                </View>
+                <Text style={s.placeholderText}>No photo selected</Text>
               </View>
             )}
-            
-            <View style={styles.photoButtons}>
-              <TouchableOpacity style={styles.photoButton} onPress={handleTakePhoto}>
-                <Ionicons name="camera" size={20} color="#00FF41" />
-                <Text style={styles.photoButtonText}>Take Photo</Text>
+
+            <View style={s.photoBtns}>
+              <TouchableOpacity style={s.photoBtn} onPress={launchCamera}>
+                <Ionicons name="camera" size={18} color={T.accent} />
+                <Text style={s.photoBtnText}>Take Photo</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity style={styles.photoButton} onPress={handleChooseFromGallery}>
-                <Ionicons name="images" size={20} color="#00FF41" />
-                <Text style={styles.photoButtonText}>Gallery</Text>
+              <TouchableOpacity style={s.photoBtn} onPress={handleChooseFromGallery}>
+                <Ionicons name="images" size={18} color={T.accent} />
+                <Text style={s.photoBtnText}>Gallery</Text>
               </TouchableOpacity>
             </View>
           </View>
 
-          {/* Form Section */}
-          <View style={styles.formSection}>
+          {/* Form */}
+          <View style={s.form}>
             {/* Description */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Description *</Text>
+            <View style={s.fieldGroup}>
+              <Text style={s.label}>Description <Text style={{ color: T.bad }}>*</Text></Text>
               <TextInput
-                style={styles.textInput}
-                placeholder="Enter description..."
-                placeholderTextColor="#475569"
+                style={s.input}
+                placeholder="Enter description…"
+                placeholderTextColor={T.textMuted}
                 value={formData.description}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, description: text }))}
+                onChangeText={t => setFormData(p => ({ ...p, description: t }))}
               />
             </View>
 
             {/* Category */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Category</Text>
-              <ScrollView 
-                horizontal 
-                showsHorizontalScrollIndicator={false}
-                style={styles.categoryScroll}
-              >
-                {categories.map((cat) => (
+            <View style={s.fieldGroup}>
+              <Text style={s.label}>Category</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }}>
+                {categories.map(cat => (
                   <TouchableOpacity
                     key={cat}
-                    style={[
-                      styles.categoryChip,
-                      formData.category === cat && styles.categoryChipActive,
-                    ]}
-                    onPress={() => setFormData(prev => ({ ...prev, category: cat }))}
+                    style={[s.chip, formData.category === cat && s.chipActive]}
+                    onPress={() => setFormData(p => ({ ...p, category: cat }))}
                   >
-                    <Text
-                      style={[
-                        styles.categoryChipText,
-                        formData.category === cat && styles.categoryChipTextActive,
-                      ]}
-                    >
-                      {cat}
-                    </Text>
+                    <Text style={[s.chipText, formData.category === cat && s.chipTextActive]}>{cat}</Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
             </View>
 
             {/* Date */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Date</Text>
-              <View style={styles.dateContainer}>
-                <Ionicons name="calendar-outline" size={20} color="#64748b" />
-                <Text style={styles.dateText}>{formData.date}</Text>
+            <View style={s.fieldGroup}>
+              <Text style={s.label}>Date</Text>
+              <View style={s.dateBox}>
+                <Ionicons name="calendar-outline" size={18} color={T.textSoft} />
+                <Text style={s.dateText}>{formData.date}</Text>
               </View>
             </View>
 
             {/* Notes */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Notes (Optional)</Text>
+            <View style={s.fieldGroup}>
+              <Text style={s.label}>Notes <Text style={{ color: T.textMuted, fontWeight: '400' }}>(optional)</Text></Text>
               <TextInput
-                style={[styles.textInput, styles.textArea]}
-                placeholder="Add any additional notes..."
-                placeholderTextColor="#475569"
+                style={[s.input, s.textArea]}
+                placeholder="Add any additional notes…"
+                placeholderTextColor={T.textMuted}
                 value={formData.notes}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, notes: text }))}
+                onChangeText={t => setFormData(p => ({ ...p, notes: t }))}
                 multiline
                 numberOfLines={4}
                 textAlignVertical="top"
@@ -280,10 +183,10 @@ export function PhotoRegisterScreen() {
             </View>
           </View>
 
-          {/* Upload Button */}
-          <View style={styles.uploadButtonContainer}>
+          {/* Upload */}
+          <View style={s.uploadWrap}>
             <DemoButton
-              label={uploading ? 'Uploading...' : 'Upload Form'}
+              label={uploading ? 'Uploading…' : 'Upload Form'}
               icon="cloud-upload"
               onPress={handleUpload}
               loading={uploading}
@@ -296,141 +199,61 @@ export function PhotoRegisterScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000000',
+const s = StyleSheet.create({
+  flex: { flex: 1 },
+  screen: { flex: 1, backgroundColor: T.bg },
+  inner: { paddingHorizontal: 20, paddingBottom: 40 },
+
+  /* Photo */
+  photoSection: { marginTop: 16, marginBottom: 28 },
+  placeholder: {
+    width: '100%', height: 200,
+    backgroundColor: T.bgCard, borderRadius: T.r.lg,
+    borderWidth: 2, borderColor: T.border, borderStyle: 'dashed',
+    alignItems: 'center', justifyContent: 'center',
   },
-  content: {
-    flex: 1,
+  placeholderIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: T.bgElevated, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  placeholderText: { color: T.textMuted, fontSize: 14 },
+  previewWrap: {
+    position: 'relative', width: '100%', height: 250,
+    borderRadius: T.r.lg, backgroundColor: T.bgCard,
+    borderWidth: 2, borderColor: T.accent, overflow: 'hidden',
   },
-  contentContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+  previewImg: { width: '100%', height: '100%' },
+  removeBtn: { position: 'absolute', top: 10, right: 10, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: T.r.full },
+  photoBtns: { flexDirection: 'row', justifyContent: 'center', gap: 14, marginTop: 16 },
+  photoBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: T.accentDim, paddingHorizontal: 22, paddingVertical: 12,
+    borderRadius: T.r.md, borderWidth: 1, borderColor: T.accent + '40',
   },
-  photoSection: {
-    marginTop: 20,
-    marginBottom: 24,
+  photoBtnText: { color: T.accent, fontSize: 14, fontWeight: '600' },
+
+  /* Form */
+  form: { gap: 22 },
+  fieldGroup: { gap: 8 },
+  label: { color: T.accent, fontSize: 13, fontWeight: '600' },
+  input: {
+    backgroundColor: T.bgCard, borderRadius: T.r.md,
+    paddingHorizontal: 16, paddingVertical: 14,
+    color: T.text, fontSize: 15,
+    borderWidth: 1, borderColor: T.border,
   },
-  photoPlaceholder: {
-    width: '100%',
-    height: 200,
-    backgroundColor: '#1e293b',
-    borderRadius: 0,
-    borderWidth: 2,
-    borderColor: '#334155',
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
+  textArea: { minHeight: 100, paddingTop: 14 },
+  chip: {
+    backgroundColor: T.bgCard, paddingHorizontal: 16, paddingVertical: 10,
+    borderRadius: T.r.full, marginRight: 10, borderWidth: 1, borderColor: T.border,
   },
-  photoPlaceholderText: {
-    color: '#475569',
-    fontSize: 14,
-    marginTop: 8,
+  chipActive: { backgroundColor: T.accentDim, borderColor: T.accent },
+  chipText: { color: T.textSoft, fontSize: 13, fontWeight: '500' },
+  chipTextActive: { color: T.accent },
+  dateBox: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: T.bgCard, borderRadius: T.r.md,
+    paddingHorizontal: 16, paddingVertical: 14,
+    borderWidth: 1, borderColor: T.border,
   },
-  photoPreviewContainer: {
-    position: 'relative',
-    width: '100%',
-    height: 250,
-    borderRadius: 0,
-    backgroundColor: '#334155',
-    borderWidth: 2,
-    borderColor: '#00FF41',
-  },
-  removePhotoButton: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    borderRadius: 0,
-  },
-  photoButtons: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 16,
-    marginTop: 16,
-  },
-  photoButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: 'rgba(34, 197, 94, 0.1)',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 0,
-    borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.3)',
-  },
-  photoButtonText: {
-    color: '#00FF41',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  formSection: {
-    gap: 20,
-  },
-  inputGroup: {
-    gap: 8,
-  },
-  inputLabel: {
-    color: '#00FF41',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  textInput: {
-    backgroundColor: '#1e293b',
-    borderRadius: 0,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    color: '#fff',
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  textArea: {
-    minHeight: 100,
-    paddingTop: 14,
-  },
-  categoryScroll: {
-    flexGrow: 0,
-  },
-  categoryChip: {
-    backgroundColor: '#1e293b',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 0,
-    marginRight: 10,
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  categoryChipActive: {
-    backgroundColor: 'rgba(34, 197, 94, 0.2)',
-    borderColor: '#00FF41',
-  },
-  categoryChipText: {
-    color: '#34d399',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  categoryChipTextActive: {
-    color: '#00FF41',
-  },
-  dateContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: '#1e293b',
-    borderRadius: 0,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  dateText: {
-    color: '#fff',
-    fontSize: 16,
-  },
-  uploadButtonContainer: {
-    marginTop: 32,
-  },
+  dateText: { color: T.text, fontSize: 15 },
+
+  uploadWrap: { marginTop: 32 },
 });

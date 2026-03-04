@@ -1,79 +1,74 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, Modal, TextInput, TouchableOpacity, TouchableWithoutFeedback, Keyboard, Animated, Platform } from 'react-native';
+import {
+  View, Text, StyleSheet, ScrollView, Alert, Modal, TextInput,
+  TouchableOpacity, TouchableWithoutFeedback, Keyboard, Animated, Platform,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useDemoState } from '../context/DemoStateContext';
 import { useNFC } from '../hooks/useNFC';
 import { DemoHeader, HealthCircle, DemoButton } from '../components';
+import { T } from '../theme';
 
 const RANDOM_SYNC_FALLBACK_ENABLED = process.env.EXPO_PUBLIC_RANDOM_SYNC_FALLBACK === '1';
 
 export function DemoHomeScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
-  const { state, cars, selectedCar, selectCar, selectCarByNFCTag, isInitialized, pendingNotifications, readCondition, resetToUninitialized, setUserName } = useDemoState();
+  const {
+    state, cars, selectedCar, selectCar, selectCarByNFCTag,
+    isInitialized, pendingNotifications, readCondition,
+    resetToUninitialized, setUserName,
+  } = useDemoState();
   const { readTag, status: nfcStatus, error: nfcError } = useNFC();
   const [syncLoading, setSyncLoading] = useState(false);
   const [nameModalVisible, setNameModalVisible] = useState(!state.userName);
   const [nameInput, setNameInput] = useState('');
-  
-  // Animated value for keyboard offset
+
   const keyboardOffset = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const keyboardShowEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
-    const keyboardHideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const showEvt = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvt = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
 
-    const showSubscription = Keyboard.addListener(keyboardShowEvent, (e) => {
+    const showSub = Keyboard.addListener(showEvt, (e) => {
       Animated.timing(keyboardOffset, {
         toValue: -e.endCoordinates.height / 3,
         duration: Platform.OS === 'ios' ? e.duration : 200,
         useNativeDriver: true,
       }).start();
     });
-
-    const hideSubscription = Keyboard.addListener(keyboardHideEvent, (e) => {
+    const hideSub = Keyboard.addListener(hideEvt, (e) => {
       Animated.timing(keyboardOffset, {
         toValue: 0,
-        duration: Platform.OS === 'ios' ? e.duration : 200,
+        duration: Platform.OS === 'ios' ? (e as any).duration ?? 200 : 200,
         useNativeDriver: true,
       }).start();
     });
 
-    return () => {
-      showSubscription.remove();
-      hideSubscription.remove();
-    };
+    return () => { showSub.remove(); hideSub.remove(); };
   }, [keyboardOffset]);
 
   const handleSyncToUpload = async () => {
     setSyncLoading(true);
-    
     try {
       if (RANDOM_SYNC_FALLBACK_ENABLED) {
         const randomCar = cars[Math.floor(Math.random() * cars.length)];
         selectCar(randomCar.id);
-        Alert.alert('Random Car Loaded', `Selected ${randomCar.name} for testing.`, [{ text: 'OK' }]);
+        Alert.alert('Car Loaded', `Selected ${randomCar.name} for testing.`, [{ text: 'OK' }]);
         return;
       }
-
       const tagContent = await readTag();
-      
       if (tagContent) {
         const success = selectCarByNFCTag(tagContent);
         if (!success) {
-          Alert.alert(
-            'Unknown Tag',
-            `Tag content "${tagContent}" is not recognized. Please use tag 1, 2, or 3.`,
-            [{ text: 'OK' }]
-          );
+          Alert.alert('Unknown Tag', `Tag "${tagContent}" not recognized. Use tag 1–4.`, [{ text: 'OK' }]);
         }
       } else if (nfcError) {
         Alert.alert('NFC Error', nfcError, [{ text: 'OK' }]);
       }
-    } catch (error) {
-      console.error('NFC read error:', error);
+    } catch {
       Alert.alert('Error', 'Failed to read NFC tag. Please try again.', [{ text: 'OK' }]);
     } finally {
       setSyncLoading(false);
@@ -86,63 +81,51 @@ export function DemoHomeScreen() {
   };
 
   const handleReset = () => {
-    Alert.alert(
-      'Reset Demo',
-      'This will reset the demo to uninitialized state. Continue?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Reset', 
-          style: 'destructive', 
-          onPress: () => {
-            resetToUninitialized();
-            setNameModalVisible(true);
-            setNameInput('');
-          } 
-        },
-      ]
-    );
+    Alert.alert('Reset Demo', 'Return to uninitialized state?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Reset', style: 'destructive',
+        onPress: () => { resetToUninitialized(); setNameModalVisible(true); setNameInput(''); },
+      },
+    ]);
   };
 
   const handleNameSubmit = () => {
-    const trimmedName = nameInput.trim();
-    if (trimmedName) {
-      setUserName(trimmedName);
-      setNameModalVisible(false);
-    }
+    const name = nameInput.trim();
+    if (name) { setUserName(name); setNameModalVisible(false); }
   };
 
-  const greeting = state.userName ? `Hello ${state.userName}` : 'Hello';
+  const greeting = state.userName ? `Hello, ${state.userName}` : 'Hello';
 
-  // Name input modal
+  /* ── Name modal ─────────────────────────────────────────── */
   const renderNameModal = () => (
-    <Modal
-      visible={nameModalVisible}
-      transparent
-      animationType="fade"
-      onRequestClose={() => {}}
-    >
+    <Modal visible={nameModalVisible} transparent animationType="fade" onRequestClose={() => {}}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.modalOverlay}>
-          <Animated.View style={[styles.modalContent, { transform: [{ translateY: keyboardOffset }] }]}>
-            <Text style={styles.modalTitle}>Welcome!</Text>
-            <Text style={styles.modalSubtitle}>What's your name?</Text>
+          <Animated.View style={[styles.modalCard, { transform: [{ translateY: keyboardOffset }] }]}>
+            <View style={styles.modalIcon}>
+              <Ionicons name="car-sport" size={32} color={T.accent} />
+            </View>
+            <Text style={styles.modalTitle}>Welcome to CarSight</Text>
+            <Text style={styles.modalSub}>Enter your name to get started</Text>
             <TextInput
               style={styles.nameInput}
               value={nameInput}
               onChangeText={setNameInput}
-              placeholder="Enter your name"
-              placeholderTextColor="#64748b"
+              placeholder="Your name"
+              placeholderTextColor={T.textMuted}
               autoCapitalize="words"
               returnKeyType="done"
               onSubmitEditing={handleNameSubmit}
             />
             <TouchableOpacity
-              style={[styles.submitButton, !nameInput.trim() && styles.submitButtonDisabled]}
+              style={[styles.modalBtn, !nameInput.trim() && styles.modalBtnDisabled]}
               onPress={handleNameSubmit}
               disabled={!nameInput.trim()}
+              activeOpacity={0.7}
             >
-              <Text style={styles.submitButtonText}>Continue</Text>
+              <Text style={styles.modalBtnText}>Continue</Text>
+              <Ionicons name="arrow-forward" size={18} color="#fff" />
             </TouchableOpacity>
           </Animated.View>
         </View>
@@ -150,99 +133,87 @@ export function DemoHomeScreen() {
     </Modal>
   );
 
-  // UNINITIALIZED STATE: Show gray placeholder circle and only "Sync to Upload" button
+  /* ── UNINITIALIZED ──────────────────────────────────────── */
   if (!isInitialized) {
     return (
-      <View style={[styles.container, { paddingBottom: insets.bottom }]}>
+      <View style={[styles.screen, { paddingBottom: insets.bottom }]}>
         {renderNameModal()}
         <DemoHeader />
-        
-        <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
-          {/* Greeting */}
+
+        <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollInner}>
           <Text style={styles.greeting}>{greeting}</Text>
-          
-          {/* Placeholder - no car selected */}
-          <Text style={styles.placeholderText}>Tap to sync your car</Text>
-          
-          {/* Gray placeholder circle */}
-          <View style={styles.circleContainer}>
-            <View style={styles.placeholderCircle}>
-              <View style={styles.placeholderInner}>
-                <Ionicons name="car-outline" size={64} color="#475569" />
-                <Text style={styles.placeholderPercent}>--</Text>
-              </View>
+          <Text style={styles.subtitle}>Tap your CarSight tag to begin</Text>
+
+          <View style={styles.circleArea}>
+            <View style={styles.placeholderRing}>
+              <Ionicons name="radio-outline" size={56} color={T.textMuted} />
+              <Text style={styles.placeholderDash}>– –</Text>
             </View>
           </View>
-          
-          {/* Only Sync to Upload button */}
-          <View style={styles.buttonContainer}>
+
+          <View style={styles.btnArea}>
             <DemoButton
-              label={nfcStatus === 'scanning' ? 'Waiting for NFC...' : 'Sync to Upload'}
+              label={nfcStatus === 'scanning' ? 'Waiting for NFC…' : 'Sync to Upload'}
               icon="wifi"
               onPress={handleSyncToUpload}
               loading={syncLoading || nfcStatus === 'scanning'}
               variant="primary"
             />
           </View>
-          
-          {/* NFC hint */}
-          <Text style={styles.hintText}>
+
+          <Text style={styles.hint}>
             {RANDOM_SYNC_FALLBACK_ENABLED
-              ? 'Random sync fallback is enabled from the terminal.\nTap to load a random car profile.'
-              : `Place your phone near the NFC tag\n(Tag 1 = Ibiza, Tag 2 = Formentor, Tag 3 = Leon, Tag 4 = Born)`}
+              ? 'Random sync fallback enabled.\nTap to load a random car profile.'
+              : 'Hold your phone near the NFC tag\nTag 1 = Ibiza · 2 = Formentor · 3 = Leon · 4 = Born'}
           </Text>
         </ScrollView>
       </View>
     );
   }
 
-  // INITIALIZED STATE: Show car name, health circle, and only "Read Car's Condition"
+  /* ── INITIALIZED ────────────────────────────────────────── */
   return (
-    <View style={[styles.container, { paddingBottom: insets.bottom }]}>
+    <View style={[styles.screen, { paddingBottom: insets.bottom }]}>
       {renderNameModal()}
       <DemoHeader />
-      
-      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
-        {/* Greeting */}
+
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollInner}>
         <Text style={styles.greeting}>{greeting}</Text>
-        
-        {/* Car Name (read-only, no dropdown) */}
+
         {selectedCar && (
-          <Text style={styles.carName}>{selectedCar.name}</Text>
+          <View style={styles.carBadge}>
+            <Ionicons name="car-sport" size={14} color={T.accent} />
+            <Text style={styles.carBadgeText}>{selectedCar.name}</Text>
+          </View>
         )}
-        
-        {/* Health Circle */}
-        <View style={styles.circleContainer}>
-          <HealthCircle
-            percentage={state.currentHealth}
-            size={260}
-          />
+
+        <View style={styles.circleArea}>
+          <HealthCircle percentage={state.currentHealth} size={250} />
         </View>
-        
-        {/* Only Read Car's Condition button (no Sync to Upload) */}
-        <View style={styles.buttonContainer}>
-          <View style={styles.conditionButtonContainer}>
+
+        <View style={styles.btnArea}>
+          <View style={styles.condBtnWrap}>
             <DemoButton
               label="Read Car's Condition"
               icon="bluetooth"
               onPress={handleReadCondition}
               variant="secondary"
-              style={styles.conditionButton}
+              style={{ width: '100%' } as any}
             />
-            {/* Notification badge - counts down from 3 */}
-            <View style={styles.notificationBadge}>
-              <Text style={styles.notificationText}>{pendingNotifications}</Text>
-            </View>
+            {pendingNotifications > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{pendingNotifications}</Text>
+              </View>
+            )}
           </View>
         </View>
-        
-        {/* Reset button for demo purposes */}
+
         <DemoButton
           label="Reset Demo"
           icon="refresh-outline"
           onPress={handleReset}
           variant="outline"
-          style={styles.resetButton}
+          style={styles.resetBtn}
         />
       </ScrollView>
     </View>
@@ -250,151 +221,70 @@ export function DemoHomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000000',
+  screen: { flex: 1, backgroundColor: T.bg },
+  scroll: { flex: 1 },
+  scrollInner: { paddingHorizontal: 24, paddingBottom: 32, alignItems: 'center' },
+
+  greeting: { fontSize: 30, fontWeight: '300', color: T.text, marginTop: 8, letterSpacing: -0.5 },
+  subtitle: { fontSize: 15, color: T.textSoft, marginTop: 6 },
+
+  circleArea: { marginVertical: 36 },
+  placeholderRing: {
+    width: 250, height: 250, borderRadius: 125,
+    borderWidth: 14, borderColor: T.bgElevated,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: T.bgCard,
   },
-  content: {
-    flex: 1,
+  placeholderDash: { fontSize: 40, color: T.textMuted, fontWeight: '200', marginTop: 8 },
+
+  carBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: T.accentDim, paddingHorizontal: 14, paddingVertical: 6,
+    borderRadius: T.r.full, marginTop: 10,
   },
-  contentContainer: {
-    paddingHorizontal: 24,
-    paddingBottom: 24,
-    alignItems: 'center',
+  carBadgeText: { color: T.accent, fontSize: 13, fontWeight: '600' },
+
+  btnArea: { width: '100%' },
+  condBtnWrap: { position: 'relative' },
+  badge: {
+    position: 'absolute', top: -6, right: -6,
+    backgroundColor: T.bad, minWidth: 22, height: 22,
+    borderRadius: T.r.full, alignItems: 'center', justifyContent: 'center',
+    paddingHorizontal: 6,
   },
-  greeting: {
-    fontSize: 32,
-    fontWeight: '300',
-    color: '#fff',
-    marginBottom: 16,
-    marginTop: 8,
-  },
-  placeholderText: {
-    fontSize: 16,
-    color: '#34d399',
-    marginBottom: 16,
-  },
-  circleContainer: {
-    marginVertical: 32,
-    position: 'relative',
-  },
-  placeholderCircle: {
-    width: 260,
-    height: 260,
-    borderRadius: 0,
-    borderWidth: 12,
-    borderColor: '#1e293b',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(30, 41, 59, 0.3)',
-  },
-  placeholderInner: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  placeholderPercent: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: '#475569',
-    marginTop: 8,
-  },
-  carName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#00FF41',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  buttonContainer: {
-    width: '100%',
-    paddingHorizontal: 8,
-  },
-  buttonSpacer: {
-    height: 12,
-  },
-  conditionButtonContainer: {
-    position: 'relative',
-  },
-  conditionButton: {
-    width: '100%',
-  },
-  notificationBadge: {
-    position: 'absolute',
-    top: -8,
-    right: -8,
-    backgroundColor: '#EF4444',
-    width: 24,
-    height: 24,
-    borderRadius: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  notificationText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  hintText: {
-    marginTop: 24,
-    color: '#34d399',
-    fontSize: 12,
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-  resetButton: {
-    marginTop: 24,
-    width: '60%',
-  },
+  badgeText: { color: '#fff', fontSize: 11, fontWeight: '700' },
+
+  hint: { marginTop: 28, color: T.textMuted, fontSize: 12, textAlign: 'center', lineHeight: 19 },
+  resetBtn: { marginTop: 28, width: '55%' },
+
+  // Modal
   modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
+    flex: 1, backgroundColor: T.bgOverlay,
+    justifyContent: 'center', alignItems: 'center', padding: 28,
   },
-  modalContent: {
-    backgroundColor: '#1e293b',
-    borderRadius: 0,
-    padding: 32,
-    width: '100%',
-    maxWidth: 340,
-    alignItems: 'center',
+  modalCard: {
+    backgroundColor: T.bgElevated, borderRadius: T.r.xl,
+    padding: 32, width: '100%', maxWidth: 360, alignItems: 'center',
+    borderWidth: 1, borderColor: T.border,
   },
-  modalTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 8,
+  modalIcon: {
+    width: 64, height: 64, borderRadius: 32,
+    backgroundColor: T.accentDim, alignItems: 'center', justifyContent: 'center',
+    marginBottom: 18,
   },
-  modalSubtitle: {
-    fontSize: 16,
-    color: '#00FF41',
-    marginBottom: 24,
-  },
+  modalTitle: { fontSize: 24, fontWeight: '700', color: T.text, marginBottom: 6 },
+  modalSub: { fontSize: 15, color: T.textSoft, marginBottom: 24 },
   nameInput: {
-    width: '100%',
-    backgroundColor: '#0f172a',
-    borderRadius: 0,
-    padding: 24,
-    fontSize: 18,
-    color: '#fff',
-    borderWidth: 1,
-    borderColor: '#334155',
-    marginBottom: 24,
-    textAlign: 'center',
+    width: '100%', backgroundColor: T.bgInput, borderRadius: T.r.md,
+    paddingHorizontal: 18, paddingVertical: 16, fontSize: 17, color: T.text,
+    borderWidth: 1, borderColor: T.borderLight, textAlign: 'center',
+    marginBottom: 20,
   },
-  submitButton: {
-    backgroundColor: '#00FF41',
-    paddingVertical: 14,
-    paddingHorizontal: 48,
-    borderRadius: 0,
+  modalBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: T.accent, paddingVertical: 14, paddingHorizontal: 36,
+    borderRadius: T.r.md,
   },
-  submitButtonDisabled: {
-    backgroundColor: '#334155',
-  },
-  submitButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
+  modalBtnDisabled: { backgroundColor: T.bgElevated },
+  modalBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
 });

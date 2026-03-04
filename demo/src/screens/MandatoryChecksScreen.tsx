@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -6,322 +6,141 @@ import { Ionicons } from '@expo/vector-icons';
 import { DemoHeader, DemoButton } from '../components';
 import { useDemoState } from '../context/DemoStateContext';
 import { MAINTENANCE_GUIDES } from '../data/carProfiles';
+import { T } from '../theme';
 
 export function MandatoryChecksScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
-  const { selectedCar, performSync } = useDemoState();
-  const [syncLoading, setSyncLoading] = useState(false);
-
+  const { selectedCar } = useDemoState();
   const guide = MAINTENANCE_GUIDES.mandatoryChecks;
 
-  const handleSync = async () => {
-    setSyncLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    const result = performSync();
-    setSyncLoading(false);
-
-    if (result === 'reset') {
-      Alert.alert('Sync Complete', 'Demo cycle complete! Returning to home.', [
-        { text: 'OK', onPress: () => navigation.navigate('HomeTab') }
-      ]);
-    } else {
-      Alert.alert('Sync Complete', 'Data synced successfully');
-    }
-  };
-
-  // Calculate next ITV date based on car registration
-  const carYear = selectedCar.year;
+  const carYear = selectedCar?.year ?? 2020;
   const vehicleAge = 2025 - carYear;
-  const itvFrequency = vehicleAge >= 10 ? 'annually' : vehicleAge >= 4 ? 'every 2 years' : 'every 4 years';
+  const freq = vehicleAge >= 10 ? 'annually' : vehicleAge >= 4 ? 'every 2 years' : 'every 4 years';
 
   return (
-    <View style={[styles.container, { paddingBottom: insets.bottom }]}>
-      <DemoHeader
-        showBack
-        onBack={() => navigation.goBack()}
-      />
-      
-      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
-        {/* Title with Icon */}
-        <View style={styles.titleRow}>
-          <Ionicons name="document-text-outline" size={24} color="#fff" />
-          <Text style={styles.title}>{guide.title}</Text>
+    <View style={[s.screen, { paddingBottom: insets.bottom }]}>
+      <DemoHeader showBack onBack={() => navigation.goBack()} />
+      <ScrollView style={s.scroll} contentContainerStyle={s.inner}>
+        <View style={s.titleRow}>
+          <View style={s.titleIcon}><Ionicons name="document-text-outline" size={20} color={T.accent} /></View>
+          <Text style={s.title}>{guide.title}</Text>
         </View>
-        
-        {/* Warning Bar */}
-        <View style={styles.warningBar}>
-          <Text style={styles.warningText}>
-            <Text style={styles.warningDot}>● </Text>
-            ITV expired
-          </Text>
+
+        <View style={[s.alert, { backgroundColor: T.badDim }]}>
+          <Ionicons name="alert-circle" size={18} color={T.bad} />
+          <Text style={[s.alertText, { color: T.bad }]}>ITV expired</Text>
         </View>
-        
-        {/* Recommendation */}
-        <Text style={styles.recommendation}>
-          YOUR {selectedCar.brand} {selectedCar.model.toUpperCase()} ({carYear}) REQUIRES ITV INSPECTION {itvFrequency.toUpperCase()}
+
+        <Text style={s.rec}>
+          Your {selectedCar?.brand} {selectedCar?.model} ({carYear}) requires ITV inspection {freq}.
         </Text>
-        
-        {/* ITV Status Card */}
-        <View style={styles.statusCard}>
-          <View style={styles.statusRow}>
-            <Text style={styles.statusLabel}>Last ITV</Text>
-            <Text style={styles.statusValue}>28.12.2023</Text>
-          </View>
-          <View style={styles.statusRow}>
-            <Text style={styles.statusLabel}>Status</Text>
-            <View style={styles.expiredBadge}>
-              <Text style={styles.expiredText}>EXPIRED</Text>
-            </View>
-          </View>
-          <View style={styles.statusRow}>
-            <Text style={styles.statusLabel}>Vehicle Age</Text>
-            <Text style={styles.statusValue}>{vehicleAge} years</Text>
-          </View>
-          <View style={styles.statusRow}>
-            <Text style={styles.statusLabel}>Required Frequency</Text>
-            <Text style={styles.statusValue}>{itvFrequency}</Text>
-          </View>
+
+        {/* Status card */}
+        <View style={s.statusCard}>
+          <StatusRow label="Last ITV" value="28.12.2023" />
+          <StatusRow label="Status" badge="EXPIRED" />
+          <StatusRow label="Vehicle Age" value={`${vehicleAge} years`} />
+          <StatusRow label="Frequency" value={freq} />
         </View>
-        
-        {/* Action Cards */}
-        <View style={styles.cardsContainer}>
-          <View style={styles.guideCard}>
-            <Text style={styles.cardTitle}>GUIDE</Text>
-            <Text style={styles.cardDescription}>
-              {guide.recommendation}
-            </Text>
-            <View style={styles.cardSteps}>
-              <Text style={styles.stepTitle}>What to bring:</Text>
-              <Text style={styles.stepText}>• Vehicle registration document (permiso de circulación)</Text>
-              <Text style={styles.stepText}>• Technical inspection card (tarjeta ITV)</Text>
-              <Text style={styles.stepText}>• Valid insurance certificate</Text>
-              <Text style={styles.stepText}>• Previous ITV report (if applicable)</Text>
-              
-              <Text style={[styles.stepTitle, { marginTop: 12 }]}>What they check:</Text>
-              <Text style={styles.stepText}>• Brakes and suspension</Text>
-              <Text style={styles.stepText}>• Lights and signals</Text>
-              <Text style={styles.stepText}>• Emissions</Text>
-              <Text style={styles.stepText}>• Steering and chassis</Text>
-              <Text style={styles.stepText}>• Tires and wheels</Text>
+
+        <View style={s.card}>
+          <Text style={s.cardTitle}>ITV Guide</Text>
+          <Text style={s.cardDesc}>{guide.recommendation}</Text>
+
+          <Text style={s.subHead}>What to bring</Text>
+          {['Vehicle registration document', 'Technical inspection card', 'Valid insurance certificate', 'Previous ITV report'].map((item, i) => (
+            <View key={i} style={s.bulletRow}>
+              <View style={s.bullet} />
+              <Text style={s.bulletText}>{item}</Text>
             </View>
-          </View>
-          
-          <View style={styles.garageCard}>
-            <Text style={styles.cardTitle}>FIND AN ITV STATION</Text>
-            <Text style={styles.cardDescription}>
-              Book your ITV inspection at an authorized station. Appointments are recommended.
-            </Text>
-            <View style={styles.garageList}>
-              <View style={styles.garageItem}>
-                <Text style={styles.garageName}>ITV Barcelona - Zona Franca</Text>
-                <Text style={styles.garageDistance}>4.2 km away</Text>
-              </View>
-              <View style={styles.garageItem}>
-                <Text style={styles.garageName}>ITV Badalona</Text>
-                <Text style={styles.garageDistance}>6.8 km away</Text>
-              </View>
-              <View style={styles.garageItem}>
-                <Text style={styles.garageName}>ITV L'Hospitalet</Text>
-                <Text style={styles.garageDistance}>5.1 km away</Text>
-              </View>
+          ))}
+
+          <Text style={[s.subHead, { marginTop: 14 }]}>What they check</Text>
+          {['Brakes and suspension', 'Lights and signals', 'Emissions', 'Steering and chassis', 'Tires and wheels'].map((item, i) => (
+            <View key={i} style={s.bulletRow}>
+              <View style={s.bullet} />
+              <Text style={s.bulletText}>{item}</Text>
             </View>
-          </View>
+          ))}
         </View>
-        
-        {/* Fine Warning */}
-        <View style={styles.fineWarning}>
-          <Ionicons name="warning" size={20} color="#EF4444" />
-          <Text style={styles.fineText}>
-            Driving with an expired ITV can result in fines up to €500 and vehicle immobilization.
-          </Text>
+
+        <View style={s.card}>
+          <Text style={s.cardTitle}>Nearby ITV Stations</Text>
+          <Text style={s.cardDesc}>Appointments are recommended.</Text>
+          <GarageRow name="ITV Barcelona — Zona Franca" dist="4.2 km" />
+          <GarageRow name="ITV Badalona" dist="6.8 km" />
+          <GarageRow name="ITV L'Hospitalet" dist="5.1 km" />
         </View>
-        
-        {/* Action Buttons */}
-        <View style={styles.buttonsContainer}>
-          <DemoButton
-            label="Upload Update"
-            icon="add-circle-outline"
-            onPress={() => Alert.alert('Upload', 'This would open the upload dialog')}
-            variant="outline"
-          />
-          
-          <View style={styles.buttonSpacer} />
-          
-          <DemoButton
-            label="Sync Now"
-            icon="wifi"
-            onPress={handleSync}
-            loading={syncLoading}
-            variant="primary"
-          />
+
+        <View style={s.fineWarn}>
+          <Ionicons name="warning" size={18} color={T.bad} />
+          <Text style={s.fineText}>Driving with expired ITV can result in fines up to 500 EUR and vehicle immobilization.</Text>
+        </View>
+
+        <View style={s.btns}>
+          <DemoButton label="Upload Update" icon="add-circle-outline" onPress={() => Alert.alert('Upload', 'This would open the upload dialog')} variant="outline" />
         </View>
       </ScrollView>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000000',
-  },
-  content: {
-    flex: 1,
-  },
-  contentContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 24,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginTop: 8,
-    marginBottom: 12,
-  },
-  title: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-    letterSpacing: 1,
-  },
-  warningBar: {
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
-    padding: 12,
-    borderRadius: 0,
-    marginBottom: 20,
-  },
-  warningText: {
-    color: '#EF4444',
-    fontSize: 13,
-  },
-  warningDot: {
-    color: '#EF4444',
-  },
-  recommendation: {
-    color: '#00FF41',
-    fontSize: 13,
-    lineHeight: 20,
-    textAlign: 'center',
-    marginBottom: 24,
-    paddingHorizontal: 16,
-  },
-  statusCard: {
-    backgroundColor: '#1a1a1a',
-    borderRadius: 0,
-    padding: 24,
-    marginBottom: 20,
-  },
-  statusRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
-  },
-  statusLabel: {
-    color: '#34d399',
-    fontSize: 13,
-  },
-  statusValue: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  expiredBadge: {
-    backgroundColor: 'rgba(239, 68, 68, 0.2)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 0,
-  },
-  expiredText: {
-    color: '#EF4444',
-    fontSize: 11,
-    fontWeight: 'bold',
-  },
-  cardsContainer: {
-    gap: 16,
-    marginBottom: 16,
-  },
-  guideCard: {
-    backgroundColor: '#f5f5f5',
-    borderRadius: 0,
-    padding: 32,
-  },
-  garageCard: {
-    backgroundColor: '#f5f5f5',
-    borderRadius: 0,
-    padding: 32,
-  },
-  cardTitle: {
-    color: '#1a1a1a',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  cardDescription: {
-    color: '#4a4a4a',
-    fontSize: 13,
-    lineHeight: 20,
-    marginBottom: 16,
-  },
-  cardSteps: {
-    gap: 6,
-  },
-  stepTitle: {
-    color: '#1a1a1a',
-    fontSize: 13,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  stepText: {
-    color: '#4a4a4a',
-    fontSize: 12,
-    lineHeight: 18,
-  },
-  garageList: {
-    gap: 12,
-  },
-  garageItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
-  },
-  garageName: {
-    color: '#1a1a1a',
-    fontSize: 14,
-    fontWeight: '500',
-    flex: 1,
-  },
-  garageDistance: {
-    color: '#34d399',
-    fontSize: 12,
-  },
-  fineWarning: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    padding: 24,
-    borderRadius: 0,
-    marginBottom: 24,
-  },
-  fineText: {
-    color: '#fca5a5',
-    fontSize: 12,
-    flex: 1,
-    lineHeight: 18,
-  },
-  buttonsContainer: {
-    gap: 12,
-  },
-  buttonSpacer: {
-    height: 4,
-  },
+function StatusRow({ label, value, badge }: { label: string; value?: string; badge?: string }) {
+  return (
+    <View style={s.sRow}>
+      <Text style={s.sLabel}>{label}</Text>
+      {badge ? (
+        <View style={s.expBadge}><Text style={s.expText}>{badge}</Text></View>
+      ) : (
+        <Text style={s.sValue}>{value}</Text>
+      )}
+    </View>
+  );
+}
+
+function GarageRow({ name, dist }: { name: string; dist: string }) {
+  return (
+    <View style={s.garageRow}>
+      <View style={s.garageIcon}><Ionicons name="location-outline" size={16} color={T.accent} /></View>
+      <Text style={s.garageName}>{name}</Text>
+      <Text style={s.garageDist}>{dist}</Text>
+    </View>
+  );
+}
+
+const s = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: T.bg },
+  scroll: { flex: 1 },
+  inner: { paddingHorizontal: 20, paddingBottom: 32 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 8, marginBottom: 14 },
+  titleIcon: { width: 40, height: 40, borderRadius: T.r.sm, backgroundColor: T.accentDim, alignItems: 'center', justifyContent: 'center' },
+  title: { color: T.text, fontSize: 20, fontWeight: '700' },
+  alert: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderRadius: T.r.md, marginBottom: 18 },
+  alertText: { fontSize: 13, fontWeight: '600', flex: 1 },
+  rec: { color: T.textSoft, fontSize: 14, lineHeight: 21, textAlign: 'center', marginBottom: 24, paddingHorizontal: 8 },
+
+  statusCard: { backgroundColor: T.bgCard, borderRadius: T.r.lg, borderWidth: 1, borderColor: T.border, padding: 20, marginBottom: 16 },
+  sRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: T.border },
+  sLabel: { color: T.textSoft, fontSize: 13 },
+  sValue: { color: T.text, fontSize: 13, fontWeight: '600' },
+  expBadge: { backgroundColor: T.badDim, paddingHorizontal: 10, paddingVertical: 4, borderRadius: T.r.sm },
+  expText: { color: T.bad, fontSize: 11, fontWeight: '700' },
+
+  card: { backgroundColor: T.bgCard, borderRadius: T.r.lg, borderWidth: 1, borderColor: T.border, padding: 22, marginBottom: 16 },
+  cardTitle: { color: T.accent, fontSize: 14, fontWeight: '700', letterSpacing: 0.4, marginBottom: 10 },
+  cardDesc: { color: T.textSoft, fontSize: 13, lineHeight: 20, marginBottom: 16 },
+  subHead: { color: T.text, fontSize: 13, fontWeight: '700', marginBottom: 8 },
+  bulletRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 },
+  bullet: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: T.accent },
+  bulletText: { color: T.text, fontSize: 13 },
+
+  fineWarn: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, backgroundColor: T.badDim, padding: 18, borderRadius: T.r.md, marginBottom: 16 },
+  fineText: { color: T.bad, fontSize: 12, flex: 1, lineHeight: 18, fontWeight: '500' },
+
+  garageRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: T.border },
+  garageIcon: { width: 32, height: 32, borderRadius: T.r.sm, backgroundColor: T.accentDim, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  garageName: { color: T.text, fontSize: 14, fontWeight: '500', flex: 1 },
+  garageDist: { color: T.ok, fontSize: 12, fontWeight: '600' },
+  btns: { gap: 12, marginTop: 8 },
 });
