@@ -9,6 +9,7 @@
     "prebuild": "expo prebuild --clean"
   },
   "dependencies": {
+    "@bottom-tabs/react-navigation": "^1.1.0",
     "@expo/vector-icons": "^14.1.0",
     "@react-navigation/bottom-tabs": "^7.8.8",
     "@react-navigation/native": "^7.1.22",
@@ -19,6 +20,7 @@
     "expo-status-bar": "~3.0.8",
     "react": "19.1.0",
     "react-native": "0.81.5",
+    "react-native-bottom-tabs": "^1.1.0",
     "react-native-nfc-manager": "^3.17.2",
     "react-native-reanimated": "~4.1.1",
     "react-native-safe-area-context": "~5.6.0",

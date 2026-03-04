@@ -33,7 +33,8 @@
         {
           "nfcPermission": "This app uses NFC to sync with your car's CarTag device"
         }
-      ]
+      ],
+      "react-native-bottom-tabs"
     ]
   }
 }
