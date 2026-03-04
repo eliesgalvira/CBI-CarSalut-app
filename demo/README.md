@@ -115,8 +115,9 @@ For real NFC functionality, program tags with values "1", "2", or "3" to load di
 
 ## Tech Stack
 
-- React Native 0.81.5 with Expo 54
-- React Navigation (Bottom Tabs + Native Stack)
+- React Native 0.83.2 with Expo 55
+- React Navigation (Native Bottom Tabs + Native Stack)
 - React Native Reanimated (animations)
 - React Native SVG (health gauge)
 - @expo/vector-icons (Ionicons)
+- @expo/ui (Jetpack Compose AlertDialog)
