@@ -25,7 +25,28 @@ const ConditionStack = createNativeStackNavigator();
 const UpdateStack = createNativeStackNavigator();
 const YourCarStack = createNativeStackNavigator();
 const DriverStack = createNativeStackNavigator();
-const IoniconsNative = require('@expo/vector-icons/build/vendor/react-native-vector-icons/Ionicons');
+const androidIcons = {
+  home: {
+    active: require('../assets/tabs/home-active.png'),
+    inactive: require('../assets/tabs/home-inactive.png'),
+  },
+  health: {
+    active: require('../assets/tabs/health-active.png'),
+    inactive: require('../assets/tabs/health-inactive.png'),
+  },
+  update: {
+    active: require('../assets/tabs/update-active.png'),
+    inactive: require('../assets/tabs/update-inactive.png'),
+  },
+  car: {
+    active: require('../assets/tabs/car-active.png'),
+    inactive: require('../assets/tabs/car-inactive.png'),
+  },
+  profile: {
+    active: require('../assets/tabs/profile-active.png'),
+    inactive: require('../assets/tabs/profile-inactive.png'),
+  },
+};
 
 function HomeStackNavigator() {
   return (
@@ -73,7 +94,11 @@ function DriverStackNavigator() {
   );
 }
 
-function tabIcon(filled: string, outline: string, androidFilled: string, androidOutline: string) {
+function tabIcon(
+  filled: string,
+  outline: string,
+  android: { active: any; inactive: any },
+) {
   return ({ focused }: { focused: boolean }) => {
     if (Platform.OS === 'ios') {
       return {
@@ -81,11 +106,7 @@ function tabIcon(filled: string, outline: string, androidFilled: string, android
       };
     }
 
-    return IoniconsNative.getImageSourceSync(
-      focused ? androidFilled : androidOutline,
-      22,
-      focused ? T.accent : T.textMuted,
-    );
+    return focused ? android.active : android.inactive;
   };
 }
 
@@ -110,7 +131,7 @@ function DemoMainNavigator() {
         component={HomeStackNavigator}
         options={{
           tabBarLabel: 'Home',
-          tabBarIcon: tabIcon('house.fill', 'house', 'home', 'home-outline'),
+          tabBarIcon: tabIcon('house.fill', 'house', androidIcons.home),
         }}
       />
       <Tab.Screen
@@ -118,7 +139,7 @@ function DemoMainNavigator() {
         component={ConditionStackNavigator}
         options={{
           tabBarLabel: 'Health',
-          tabBarIcon: tabIcon('waveform.path.ecg', 'waveform.path.ecg', 'pulse', 'pulse-outline'),
+          tabBarIcon: tabIcon('waveform.path.ecg', 'waveform.path.ecg', androidIcons.health),
         }}
       />
       <Tab.Screen
@@ -126,7 +147,7 @@ function DemoMainNavigator() {
         component={UpdateStackNavigator}
         options={{
           tabBarLabel: 'Update',
-          tabBarIcon: tabIcon('icloud.and.arrow.up.fill', 'icloud.and.arrow.up', 'cloud-upload', 'cloud-upload-outline'),
+          tabBarIcon: tabIcon('icloud.and.arrow.up.fill', 'icloud.and.arrow.up', androidIcons.update),
         }}
       />
       <Tab.Screen
@@ -134,7 +155,7 @@ function DemoMainNavigator() {
         component={YourCarStackNavigator}
         options={{
           tabBarLabel: 'My Car',
-          tabBarIcon: tabIcon('car.fill', 'car', 'car-sport', 'car-sport-outline'),
+          tabBarIcon: tabIcon('car.fill', 'car', androidIcons.car),
         }}
       />
       <Tab.Screen
@@ -142,7 +163,7 @@ function DemoMainNavigator() {
         component={DriverStackNavigator}
         options={{
           tabBarLabel: 'Profile',
-          tabBarIcon: tabIcon('person.fill', 'person', 'person', 'person-outline'),
+          tabBarIcon: tabIcon('person.fill', 'person', androidIcons.profile),
         }}
       />
     </Tab.Navigator>
