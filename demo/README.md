@@ -8,7 +8,8 @@ A standalone demo app for booth presentations showcasing the CarSight car health
 - 📊 **Health Monitoring**: Animated circular gauge showing car condition percentage
 - 🔄 **NFC Sync Simulation**: Cycles through health states on each sync
 - 🔧 **Maintenance Guides**: Oil, Water, Tires, Water Pump, Mandatory Checks (ITV)
-- 📱 **5-Tab Navigation**: Home, Condition, Update, Your Car, Driver
+- 📱 **5-Tab Native Navigation**: Home, Condition, Update, Your Car, Driver
+- 💬 **Native Android Dialogs**: Expo UI Jetpack Compose `AlertDialog` via shared dialog provider
 
 ## Sync Cycle Behavior
 
@@ -26,6 +27,9 @@ demo/
 ├── App.tsx              # App entry point
 ├── app.json             # Expo configuration
 ├── package.json         # Dependencies
+├── assets/
+│   ├── icon.png
+│   └── tabs/            # Android tab icon assets (active/inactive)
 ├── src/
 │   ├── components/      # Reusable UI components
 │   │   ├── ActionCard.tsx
@@ -38,6 +42,7 @@ demo/
 │   │   ├── ImprovementCard.tsx
 │   │   └── InfoGrid.tsx
 │   ├── context/
+│   │   ├── DialogContext.tsx     # Shared dialog API (Expo AlertDialog on Android)
 │   │   └── DemoStateContext.tsx  # State management
 │   ├── data/
 │   │   └── carProfiles.ts        # Car data & maintenance info
@@ -47,12 +52,14 @@ demo/
 │   │   ├── DriverScreen.tsx
 │   │   ├── MandatoryChecksScreen.tsx
 │   │   ├── OilDetailScreen.tsx
+│   │   ├── PhotoRegisterScreen.tsx
 │   │   ├── TiresDetailScreen.tsx
 │   │   ├── UpdateScreen.tsx
 │   │   ├── WaterDetailScreen.tsx
 │   │   ├── WaterPumpDetailScreen.tsx
 │   │   └── YourCarScreen.tsx
 │   ├── DemoNavigator.tsx         # Navigation setup
+│   ├── theme.ts                  # Design tokens and palette
 │   └── types.ts                  # TypeScript interfaces
 ```
 
@@ -116,7 +123,8 @@ For real NFC functionality, program tags with values "1", "2", or "3" to load di
 ## Tech Stack
 
 - React Native 0.83.2 with Expo 55
-- React Navigation (Native Bottom Tabs + Native Stack)
+- @bottom-tabs/react-navigation + react-native-bottom-tabs (native bottom tabs)
+- React Navigation Native Stack (@react-navigation/native-stack)
 - React Native Reanimated (animations)
 - React Native SVG (health gauge)
 - @expo/vector-icons (Ionicons)
