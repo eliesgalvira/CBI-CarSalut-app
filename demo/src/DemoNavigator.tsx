@@ -177,6 +177,7 @@ const styles = StyleSheet.create({
     paddingTop: 6,
     elevation: 0,
     shadowOpacity: 0,
+    overflow: 'visible' as const,
   },
   tabLabel: {
     fontSize: 10,
@@ -186,11 +187,13 @@ const styles = StyleSheet.create({
   },
   tabItem: {
     paddingVertical: 2,
+    overflow: 'visible' as const,
   },
   activeIconWrap: {
     backgroundColor: T.accentDim,
     borderRadius: T.r.sm,
     paddingHorizontal: 14,
-    paddingVertical: 4,
+    paddingVertical: 6,
+    overflow: 'visible' as const,
   },
 });
