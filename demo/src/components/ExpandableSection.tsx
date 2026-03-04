@@ -33,7 +33,7 @@ export function ExpandableSection({
 const styles = StyleSheet.create({
   container: {
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderRadius: 12,
+    borderRadius: 0,
     overflow: 'hidden',
     marginBottom: 8,
   },
@@ -41,10 +41,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
+    padding: 24,
   },
   title: {
-    color: '#94a3b8',
+    color: '#00FF41',
     fontSize: 14,
     fontWeight: '500',
     letterSpacing: 0.5,

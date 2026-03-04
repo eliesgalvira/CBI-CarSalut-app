@@ -252,7 +252,7 @@ export function DemoHomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a0a0f',
+    backgroundColor: '#000000',
   },
   content: {
     flex: 1,
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
   },
   placeholderText: {
     fontSize: 16,
-    color: '#64748b',
+    color: '#34d399',
     marginBottom: 16,
   },
   circleContainer: {
@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
   placeholderCircle: {
     width: 260,
     height: 260,
-    borderRadius: 130,
+    borderRadius: 0,
     borderWidth: 12,
     borderColor: '#1e293b',
     alignItems: 'center',
@@ -294,14 +294,14 @@ const styles = StyleSheet.create({
   },
   placeholderPercent: {
     fontSize: 48,
-    fontWeight: '700',
+    fontWeight: 'bold',
     color: '#475569',
     marginTop: 8,
   },
   carName: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#22C55E',
+    fontWeight: 'bold',
+    color: '#00FF41',
     marginBottom: 8,
     textAlign: 'center',
   },
@@ -325,18 +325,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#EF4444',
     width: 24,
     height: 24,
-    borderRadius: 12,
+    borderRadius: 0,
     alignItems: 'center',
     justifyContent: 'center',
   },
   notificationText: {
     color: '#fff',
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: 'bold',
   },
   hintText: {
     marginTop: 24,
-    color: '#64748b',
+    color: '#34d399',
     fontSize: 12,
     textAlign: 'center',
     lineHeight: 18,
@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: '#1e293b',
-    borderRadius: 16,
+    borderRadius: 0,
     padding: 32,
     width: '100%',
     maxWidth: 340,
@@ -362,20 +362,20 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 28,
-    fontWeight: '700',
+    fontWeight: 'bold',
     color: '#fff',
     marginBottom: 8,
   },
   modalSubtitle: {
     fontSize: 16,
-    color: '#94a3b8',
+    color: '#00FF41',
     marginBottom: 24,
   },
   nameInput: {
     width: '100%',
     backgroundColor: '#0f172a',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 0,
+    padding: 24,
     fontSize: 18,
     color: '#fff',
     borderWidth: 1,
@@ -384,10 +384,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   submitButton: {
-    backgroundColor: '#22C55E',
+    backgroundColor: '#00FF41',
     paddingVertical: 14,
     paddingHorizontal: 48,
-    borderRadius: 12,
+    borderRadius: 0,
   },
   submitButtonDisabled: {
     backgroundColor: '#334155',
@@ -395,6 +395,6 @@ const styles = StyleSheet.create({
   submitButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
 });

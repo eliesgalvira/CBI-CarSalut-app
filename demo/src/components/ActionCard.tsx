@@ -23,13 +23,13 @@ const styles = StyleSheet.create({
   container: {
     width: '47%',
     aspectRatio: 1.2,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 16,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 0,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: '#00FF41',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 16,
+    padding: 24,
     marginBottom: 12,
   },
   iconContainer: {
@@ -38,7 +38,7 @@ const styles = StyleSheet.create({
   label: {
     color: '#fff',
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: 'bold',
     textAlign: 'center',
     textTransform: 'uppercase',
     letterSpacing: 0.5,

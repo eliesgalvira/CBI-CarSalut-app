@@ -134,7 +134,7 @@ export function TiresDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a0a0f',
+    backgroundColor: '#000000',
   },
   content: {
     flex: 1,
@@ -153,13 +153,13 @@ const styles = StyleSheet.create({
   title: {
     color: '#fff',
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: 'bold',
     letterSpacing: 1,
   },
   warningBar: {
     backgroundColor: 'rgba(245, 158, 11, 0.15)',
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 0,
     marginBottom: 20,
   },
   warningText: {
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
     color: '#F59E0B',
   },
   recommendation: {
-    color: '#94a3b8',
+    color: '#00FF41',
     fontSize: 13,
     lineHeight: 20,
     textAlign: 'center',
@@ -178,13 +178,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   pressureInfo: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 0,
+    padding: 24,
     marginBottom: 20,
   },
   pressureTitle: {
-    color: '#94a3b8',
+    color: '#00FF41',
     fontSize: 12,
     textAlign: 'center',
     marginBottom: 12,
@@ -199,13 +199,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pressureLabel: {
-    color: '#64748b',
+    color: '#34d399',
     fontSize: 12,
   },
   pressureValue: {
     color: '#fff',
     fontSize: 24,
-    fontWeight: '600',
+    fontWeight: 'bold',
     marginTop: 4,
   },
   cardsContainer: {
@@ -214,18 +214,18 @@ const styles = StyleSheet.create({
   },
   guideCard: {
     backgroundColor: '#f5f5f5',
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 0,
+    padding: 32,
   },
   garageCard: {
     backgroundColor: '#f5f5f5',
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 0,
+    padding: 32,
   },
   cardTitle: {
     color: '#1a1a1a',
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: 'bold',
     marginBottom: 12,
     textAlign: 'center',
   },
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   garageDistance: {
-    color: '#64748b',
+    color: '#34d399',
     fontSize: 12,
   },
   buttonsContainer: {

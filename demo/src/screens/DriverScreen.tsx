@@ -81,7 +81,7 @@ function MenuItem({ icon, label }: { icon: string; label: string }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a0a0f',
+    backgroundColor: '#000000',
   },
   content: {
     flex: 1,
@@ -100,15 +100,15 @@ const styles = StyleSheet.create({
   userName: {
     color: '#fff',
     fontSize: 24,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
   statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 16,
-    padding: 20,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 0,
+    padding: 32,
   },
   statItem: {
     flex: 1,
@@ -117,10 +117,10 @@ const styles = StyleSheet.create({
   statValue: {
     color: '#fff',
     fontSize: 24,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
   statLabel: {
-    color: '#64748b',
+    color: '#34d399',
     fontSize: 12,
     marginTop: 4,
   },
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
     marginTop: 32,
   },
   version: {
-    color: '#64748b',
+    color: '#34d399',
     fontSize: 12,
     textAlign: 'center',
     marginTop: 24,

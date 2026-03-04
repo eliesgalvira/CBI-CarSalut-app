@@ -69,7 +69,7 @@ export function DemoHeader({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#0a0a0f',
+    backgroundColor: '#000000',
     paddingHorizontal: 16,
     paddingBottom: 12,
   },
@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
   logoText: {
     color: '#fff',
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
   backButton: {
     padding: 4,
@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
   title: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
@@ -116,27 +116,27 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 0,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderColor: '#00FF41',
     gap: 6,
   },
   carDropdownText: {
     color: '#fff',
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
   adBadge: {
     backgroundColor: '#8b5cf6',
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: 0,
     alignItems: 'center',
     justifyContent: 'center',
   },
   adText: {
     color: '#fff',
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: 'bold',
   },
 });

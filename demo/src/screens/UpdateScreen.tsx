@@ -59,7 +59,7 @@ export function UpdateScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a0a0f',
+    backgroundColor: '#000000',
   },
   content: {
     flex: 1,
@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   stepLabel: {
-    color: '#64748b',
+    color: '#34d399',
     fontSize: 12,
     letterSpacing: 1,
     marginTop: 24,

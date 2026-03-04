@@ -52,9 +52,9 @@ export function InfoGrid({ car }: InfoGridProps) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 16,
-    padding: 16,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 0,
+    padding: 24,
   },
   fullRow: {
     alignItems: 'center',
@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   label: {
-    color: '#64748b',
+    color: '#34d399',
     fontSize: 10,
     letterSpacing: 0.5,
     marginBottom: 4,
@@ -98,6 +98,6 @@ const styles = StyleSheet.create({
   valueMain: {
     color: '#fff',
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
 });

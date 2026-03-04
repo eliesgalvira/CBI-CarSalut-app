@@ -21,19 +21,19 @@ interface DemoButtonProps {
 
 const variantStyles = {
   primary: {
-    backgroundColor: '#22C55E',
-    borderColor: '#22C55E',
+    backgroundColor: '#00FF41',
+    borderColor: '#00FF41',
     textColor: '#ffffff',
   },
   secondary: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderColor: '#00FF41',
     textColor: '#ffffff',
   },
   outline: {
     backgroundColor: 'transparent',
-    borderColor: '#22C55E',
-    textColor: '#22C55E',
+    borderColor: '#00FF41',
+    textColor: '#00FF41',
   },
 };
 
@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
   button: {
     height: 56,
     paddingHorizontal: 24,
-    borderRadius: 28,
+    borderRadius: 0,
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: 'bold',
     letterSpacing: 1,
     textTransform: 'uppercase',
   },

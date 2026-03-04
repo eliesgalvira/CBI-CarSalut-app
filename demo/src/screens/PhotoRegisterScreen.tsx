@@ -178,7 +178,7 @@ export function PhotoRegisterScreen() {
                   style={{
                     width: '100%',
                     height: 250,
-                    borderRadius: 12,
+                    borderRadius: 0,
                   }}
                   resizeMode="contain"
                   onLoad={() => console.log('[PhotoRegister] Image onLoad fired for:', photo)}
@@ -200,12 +200,12 @@ export function PhotoRegisterScreen() {
             
             <View style={styles.photoButtons}>
               <TouchableOpacity style={styles.photoButton} onPress={handleTakePhoto}>
-                <Ionicons name="camera" size={20} color="#22C55E" />
+                <Ionicons name="camera" size={20} color="#00FF41" />
                 <Text style={styles.photoButtonText}>Take Photo</Text>
               </TouchableOpacity>
               
               <TouchableOpacity style={styles.photoButton} onPress={handleChooseFromGallery}>
-                <Ionicons name="images" size={20} color="#22C55E" />
+                <Ionicons name="images" size={20} color="#00FF41" />
                 <Text style={styles.photoButtonText}>Gallery</Text>
               </TouchableOpacity>
             </View>
@@ -299,7 +299,7 @@ export function PhotoRegisterScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a0a0f',
+    backgroundColor: '#000000',
   },
   content: {
     flex: 1,
@@ -316,7 +316,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 200,
     backgroundColor: '#1e293b',
-    borderRadius: 12,
+    borderRadius: 0,
     borderWidth: 2,
     borderColor: '#334155',
     borderStyle: 'dashed',
@@ -332,17 +332,17 @@ const styles = StyleSheet.create({
     position: 'relative',
     width: '100%',
     height: 250,
-    borderRadius: 12,
+    borderRadius: 0,
     backgroundColor: '#334155',
     borderWidth: 2,
-    borderColor: '#22C55E',
+    borderColor: '#00FF41',
   },
   removePhotoButton: {
     position: 'absolute',
     top: 8,
     right: 8,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    borderRadius: 14,
+    borderRadius: 0,
   },
   photoButtons: {
     flexDirection: 'row',
@@ -357,14 +357,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(34, 197, 94, 0.1)',
     paddingHorizontal: 20,
     paddingVertical: 12,
-    borderRadius: 8,
+    borderRadius: 0,
     borderWidth: 1,
     borderColor: 'rgba(34, 197, 94, 0.3)',
   },
   photoButtonText: {
-    color: '#22C55E',
+    color: '#00FF41',
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
   formSection: {
     gap: 20,
@@ -373,13 +373,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   inputLabel: {
-    color: '#94a3b8',
+    color: '#00FF41',
     fontSize: 14,
     fontWeight: '500',
   },
   textInput: {
     backgroundColor: '#1e293b',
-    borderRadius: 8,
+    borderRadius: 0,
     paddingHorizontal: 16,
     paddingVertical: 14,
     color: '#fff',
@@ -398,29 +398,29 @@ const styles = StyleSheet.create({
     backgroundColor: '#1e293b',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 20,
+    borderRadius: 0,
     marginRight: 10,
     borderWidth: 1,
     borderColor: '#334155',
   },
   categoryChipActive: {
     backgroundColor: 'rgba(34, 197, 94, 0.2)',
-    borderColor: '#22C55E',
+    borderColor: '#00FF41',
   },
   categoryChipText: {
-    color: '#64748b',
+    color: '#34d399',
     fontSize: 14,
     fontWeight: '500',
   },
   categoryChipTextActive: {
-    color: '#22C55E',
+    color: '#00FF41',
   },
   dateContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     backgroundColor: '#1e293b',
-    borderRadius: 8,
+    borderRadius: 0,
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderWidth: 1,

@@ -136,7 +136,7 @@ export function ConditionScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a0a0f',
+    backgroundColor: '#000000',
   },
   content: {
     flex: 1,
@@ -146,9 +146,9 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   title: {
-    color: '#94a3b8',
+    color: '#00FF41',
     fontSize: 14,
-    letterSpacing: 2,
+    letterSpacing: 4,
     textAlign: 'center',
     marginVertical: 16,
   },
@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   lastSync: {
-    color: '#64748b',
+    color: '#34d399',
     fontSize: 11,
     marginTop: 8,
     letterSpacing: 0.5,
@@ -197,10 +197,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: '#1a1a1a',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 20,
+    borderRadius: 0,
     alignSelf: 'flex-start',
     marginBottom: 16,
     gap: 8,
@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
   },
   filterOptions: {
     backgroundColor: '#1a1a2e',
-    borderRadius: 12,
+    borderRadius: 0,
     marginBottom: 16,
     overflow: 'hidden',
   },
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   emptyText: {
-    color: '#64748b',
+    color: '#34d399',
     textAlign: 'center',
     marginTop: 32,
   },

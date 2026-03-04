@@ -21,12 +21,12 @@ export function HealthBar({ percentage, height = 8 }: HealthBarProps) {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    borderRadius: 4,
+    borderRadius: 0,
     overflow: 'hidden',
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   greenBar: {
-    backgroundColor: '#22C55E',
+    backgroundColor: '#00FF41',
     borderTopLeftRadius: 4,
     borderBottomLeftRadius: 4,
   },

@@ -137,7 +137,7 @@ export function YourCarScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a0a0f',
+    backgroundColor: '#000000',
   },
   content: {
     flex: 1,
@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   conditionLabel: {
-    color: '#64748b',
+    color: '#34d399',
     fontSize: 12,
     letterSpacing: 1,
     marginBottom: 4,
@@ -184,19 +184,19 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   lastSync: {
-    color: '#64748b',
+    color: '#34d399',
     fontSize: 11,
     marginTop: 8,
     letterSpacing: 0.5,
   },
   verifiedHistory: {
-    color: '#94a3b8',
+    color: '#00FF41',
     fontSize: 13,
     letterSpacing: 0.5,
     marginBottom: 20,
   },
   sectionTitle: {
-    color: '#94a3b8',
+    color: '#00FF41',
     fontSize: 14,
     letterSpacing: 1,
     marginBottom: 12,
@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(255, 255, 255, 0.05)',
   },
   historyDate: {
-    color: '#64748b',
+    color: '#34d399',
     fontSize: 11,
   },
   historyType: {
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   historyGarage: {
-    color: '#94a3b8',
+    color: '#00FF41',
     fontSize: 12,
     marginTop: 2,
   },
@@ -234,10 +234,10 @@ const styles = StyleSheet.create({
   statValue: {
     color: '#fff',
     fontSize: 24,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
   statLabel: {
-    color: '#64748b',
+    color: '#34d399',
     fontSize: 11,
     marginTop: 4,
   },
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   garageAddress: {
-    color: '#94a3b8',
+    color: '#00FF41',
     fontSize: 12,
     marginTop: 2,
   },

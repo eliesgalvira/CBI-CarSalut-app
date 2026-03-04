@@ -105,7 +105,7 @@ function DemoMainNavigator() {
             height: 70 + insets.bottom 
           },
         ],
-        tabBarActiveTintColor: '#22C55E',
+        tabBarActiveTintColor: '#00FF41',
         tabBarInactiveTintColor: '#64748b',
         tabBarLabelStyle: styles.tabBarLabel,
         tabBarItemStyle: styles.tabBarItem,
@@ -176,14 +176,14 @@ export function DemoNavigator() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: '#0a0a0f',
+    backgroundColor: '#000000',
     borderTopColor: 'rgba(255, 255, 255, 0.1)',
     borderTopWidth: 1,
     paddingTop: 8,
   },
   tabBarLabel: {
     fontSize: 9,
-    fontWeight: '600',
+    fontWeight: 'bold',
     letterSpacing: 0.5,
     marginTop: 4,
   },

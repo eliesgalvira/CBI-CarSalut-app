@@ -44,7 +44,7 @@ export function HealthCircle({
 
   // Determine color based on percentage
   const getColor = () => {
-    if (percentage >= 70) return '#22C55E'; // Green
+    if (percentage >= 70) return '#00FF41'; // Green
     if (percentage >= 50) return '#F59E0B'; // Amber
     return '#EF4444'; // Red
   };
@@ -114,9 +114,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   conditionLabel: {
-    color: '#94a3b8',
+    color: '#00FF41',
     fontSize: 18,
-    letterSpacing: 2,
+    letterSpacing: 4,
     marginBottom: 25,
   },
   container: {

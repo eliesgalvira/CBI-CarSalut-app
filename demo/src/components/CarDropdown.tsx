@@ -50,7 +50,7 @@ export function CarDropdown({ selectedCar, cars, onSelect }: CarDropdownProps) {
                     <Text style={styles.carDetails}>{item.kilometers.toLocaleString()} km • {item.fuelType}</Text>
                   </View>
                   {item.id === selectedCar.id && (
-                    <Ionicons name="checkmark-circle" size={24} color="#22C55E" />
+                    <Ionicons name="checkmark-circle" size={24} color="#00FF41" />
                   )}
                 </TouchableOpacity>
               )}
@@ -69,16 +69,16 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 0,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderColor: '#00FF41',
     gap: 8,
     alignSelf: 'center',
   },
   dropdownText: {
     color: '#fff',
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: 'bold',
     letterSpacing: 0.5,
   },
   modalOverlay: {
@@ -89,24 +89,24 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: '#1a1a2e',
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 0,
+    padding: 32,
     maxHeight: '60%',
   },
   modalTitle: {
     color: '#fff',
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: 'bold',
     marginBottom: 16,
     textAlign: 'center',
   },
   carItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
+    padding: 24,
+    borderRadius: 0,
     marginBottom: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: '#1a1a1a',
   },
   carItemSelected: {
     backgroundColor: 'rgba(34, 197, 94, 0.1)',
@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   carBrand: {
-    color: '#94a3b8',
+    color: '#00FF41',
     fontSize: 12,
     letterSpacing: 1,
     textTransform: 'uppercase',
@@ -125,11 +125,11 @@ const styles = StyleSheet.create({
   carModel: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
     marginTop: 2,
   },
   carDetails: {
-    color: '#64748b',
+    color: '#34d399',
     fontSize: 12,
     marginTop: 4,
   },
