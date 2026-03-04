@@ -81,9 +81,9 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <DialogContext.Provider value={value}>
+      {children}
       {Platform.OS === 'android' ? (
-        <Host matchContents>
-          {children}
+        <Host>
           <AlertDialog
             visible={dialog.visible}
             title={dialog.title}
@@ -102,9 +102,7 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
             }}
           />
         </Host>
-      ) : (
-        children
-      )}
+      ) : null}
     </DialogContext.Provider>
   );
 }
