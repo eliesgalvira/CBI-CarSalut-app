@@ -1,17 +1,19 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { DemoHeader, ActionCard } from '../components';
 import { T } from '../theme';
+import { useDialog } from '../context/DialogContext';
 
 export function UpdateScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
+  const { showDialog } = useDialog();
 
   const handlePhotoRegister = () => navigation.navigate('PhotoRegister');
   const handleAction = (name: string) =>
-    Alert.alert(name, `This would open the ${name.toLowerCase()} feature.`);
+    showDialog({ title: name, message: `This would open the ${name.toLowerCase()} feature.`, buttons: [{ text: 'OK' }] });
 
   return (
     <View style={[styles.screen, { paddingBottom: insets.bottom }]}>

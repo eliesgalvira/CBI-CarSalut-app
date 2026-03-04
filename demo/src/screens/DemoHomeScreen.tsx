@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, Alert, Modal, TextInput,
+  View, Text, StyleSheet, ScrollView, Modal, TextInput,
   TouchableOpacity, TouchableWithoutFeedback, Keyboard, Animated, Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,6 +10,7 @@ import { useDemoState } from '../context/DemoStateContext';
 import { useNFC } from '../hooks/useNFC';
 import { DemoHeader, HealthCircle, DemoButton } from '../components';
 import { T } from '../theme';
+import { useDialog } from '../context/DialogContext';
 
 const RANDOM_SYNC_FALLBACK_ENABLED = process.env.EXPO_PUBLIC_RANDOM_SYNC_FALLBACK === '1';
 
@@ -22,6 +23,7 @@ export function DemoHomeScreen() {
     resetToUninitialized, setUserName,
   } = useDemoState();
   const { readTag, status: nfcStatus, error: nfcError } = useNFC();
+  const { showDialog } = useDialog();
   const [syncLoading, setSyncLoading] = useState(false);
   const [nameModalVisible, setNameModalVisible] = useState(!state.userName);
   const [nameInput, setNameInput] = useState('');
@@ -56,20 +58,20 @@ export function DemoHomeScreen() {
       if (RANDOM_SYNC_FALLBACK_ENABLED) {
         const randomCar = cars[Math.floor(Math.random() * cars.length)];
         selectCar(randomCar.id);
-        Alert.alert('Car Loaded', `Selected ${randomCar.name} for testing.`, [{ text: 'OK' }]);
+        showDialog({ title: 'Car Loaded', message: `Selected ${randomCar.name} for testing.`, buttons: [{ text: 'OK' }] });
         return;
       }
       const tagContent = await readTag();
       if (tagContent) {
         const success = selectCarByNFCTag(tagContent);
         if (!success) {
-          Alert.alert('Unknown Tag', `Tag "${tagContent}" not recognized. Use tag 1–4.`, [{ text: 'OK' }]);
+          showDialog({ title: 'Unknown Tag', message: `Tag "${tagContent}" not recognized. Use tag 1–4.`, buttons: [{ text: 'OK' }] });
         }
       } else if (nfcError) {
-        Alert.alert('NFC Error', nfcError, [{ text: 'OK' }]);
+        showDialog({ title: 'NFC Error', message: nfcError, buttons: [{ text: 'OK' }] });
       }
     } catch {
-      Alert.alert('Error', 'Failed to read NFC tag. Please try again.', [{ text: 'OK' }]);
+      showDialog({ title: 'Error', message: 'Failed to read NFC tag. Please try again.', buttons: [{ text: 'OK' }] });
     } finally {
       setSyncLoading(false);
     }
@@ -81,13 +83,17 @@ export function DemoHomeScreen() {
   };
 
   const handleReset = () => {
-    Alert.alert('Reset Demo', 'Return to uninitialized state?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Reset', style: 'destructive',
-        onPress: () => { resetToUninitialized(); setNameModalVisible(true); setNameInput(''); },
-      },
-    ]);
+    showDialog({
+      title: 'Reset Demo',
+      message: 'Return to uninitialized state?',
+      buttons: [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset', style: 'destructive',
+          onPress: () => { resetToUninitialized(); setNameModalVisible(true); setNameInput(''); },
+        },
+      ],
+    });
   };
 
   const handleNameSubmit = () => {

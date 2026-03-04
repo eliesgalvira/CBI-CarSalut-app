@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,10 +7,12 @@ import { DemoHeader, DemoButton } from '../components';
 import { useDemoState } from '../context/DemoStateContext';
 import { MAINTENANCE_GUIDES } from '../data/carProfiles';
 import { T } from '../theme';
+import { useDialog } from '../context/DialogContext';
 
 export function OilDetailScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
+  const { showDialog } = useDialog();
   const { selectedCar } = useDemoState();
   const guide = MAINTENANCE_GUIDES.oil;
 
@@ -58,7 +60,12 @@ export function OilDetailScreen() {
         </View>
 
         <View style={s.btns}>
-          <DemoButton label="Upload Update" icon="add-circle-outline" onPress={() => Alert.alert('Upload', 'This would open the upload dialog')} variant="outline" />
+          <DemoButton
+            label="Upload Update"
+            icon="add-circle-outline"
+            onPress={() => showDialog({ title: 'Upload', message: 'This would open the upload dialog', buttons: [{ text: 'OK' }] })}
+            variant="outline"
+          />
         </View>
       </ScrollView>
     </View>

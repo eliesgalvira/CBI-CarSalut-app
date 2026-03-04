@@ -7,7 +7,6 @@ import {
   TextInput,
   Image,
   TouchableOpacity,
-  Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
@@ -17,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { DemoHeader, DemoButton } from '../components';
 import { T } from '../theme';
+import { useDialog } from '../context/DialogContext';
 
 interface FormData {
   description: string;
@@ -28,6 +28,7 @@ interface FormData {
 export function PhotoRegisterScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
+  const { showDialog } = useDialog();
   const [photo, setPhoto] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [cameraLaunched, setCameraLaunched] = useState(false);
@@ -52,7 +53,7 @@ export function PhotoRegisterScreen() {
   const launchCamera = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission Required', 'Camera permission is required to take photos.');
+      showDialog({ title: 'Permission Required', message: 'Camera permission is required to take photos.', buttons: [{ text: 'OK' }] });
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
@@ -67,7 +68,7 @@ export function PhotoRegisterScreen() {
   const handleChooseFromGallery = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission Required', 'Gallery permission is required to select photos.');
+      showDialog({ title: 'Permission Required', message: 'Gallery permission is required to select photos.', buttons: [{ text: 'OK' }] });
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -80,14 +81,16 @@ export function PhotoRegisterScreen() {
   };
 
   const handleUpload = async () => {
-    if (!photo) { Alert.alert('No Photo', 'Please take or select a photo first.'); return; }
-    if (!formData.description.trim()) { Alert.alert('Missing Description', 'Please enter a description.'); return; }
+    if (!photo) { showDialog({ title: 'No Photo', message: 'Please take or select a photo first.', buttons: [{ text: 'OK' }] }); return; }
+    if (!formData.description.trim()) { showDialog({ title: 'Missing Description', message: 'Please enter a description.', buttons: [{ text: 'OK' }] }); return; }
     setUploading(true);
     await new Promise(r => setTimeout(r, 2000));
     setUploading(false);
-    Alert.alert('Upload Complete', 'Your photo has been registered successfully.', [
-      { text: 'OK', onPress: () => navigation.goBack() },
-    ]);
+    showDialog({
+      title: 'Upload Complete',
+      message: 'Your photo has been registered successfully.',
+      buttons: [{ text: 'OK', onPress: () => navigation.goBack() }],
+    });
   };
 
   const categories = ['Maintenance', 'Repair', 'Inspection', 'Damage', 'Other'];
