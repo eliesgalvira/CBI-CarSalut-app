@@ -105,6 +105,7 @@ function DemoMainNavigator() {
         tabBarInactiveTintColor: T.textMuted,
         tabBarLabelStyle: styles.tabLabel,
         tabBarItemStyle: styles.tabItem,
+        tabBarIconStyle: { overflow: 'visible' },
       }}
     >
       <Tab.Screen
@@ -177,7 +178,6 @@ const styles = StyleSheet.create({
     paddingTop: 6,
     elevation: 0,
     shadowOpacity: 0,
-    overflow: 'visible' as const,
   },
   tabLabel: {
     fontSize: 10,
@@ -187,13 +187,11 @@ const styles = StyleSheet.create({
   },
   tabItem: {
     paddingVertical: 2,
-    overflow: 'visible' as const,
   },
   activeIconWrap: {
     backgroundColor: T.accentDim,
     borderRadius: T.r.sm,
     paddingHorizontal: 14,
     paddingVertical: 6,
-    overflow: 'visible' as const,
   },
 });
