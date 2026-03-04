@@ -83,6 +83,26 @@ cd demo
 npx expo start --dev-client --clear
 ```
 
+### Random Sync Fallback
+
+If you do not have NFC tags available, you can enable a terminal flag that makes the `Sync to Upload` button load a random car profile instead of waiting for NFC.
+
+Enable it:
+
+```bash
+cd demo
+EXPO_PUBLIC_RANDOM_SYNC_FALLBACK=1 npx expo start --dev-client --clear
+```
+
+Disable it:
+
+```bash
+cd demo
+npx expo start --dev-client --clear
+```
+
+When the flag is enabled, each tap on `Sync to Upload` picks one car profile at random for testing.
+
 ## NFC Tag Configuration
 
 For real NFC functionality, program tags with values "1", "2", or "3" to load different car profiles:

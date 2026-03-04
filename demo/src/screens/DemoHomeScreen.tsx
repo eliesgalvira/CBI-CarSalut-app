@@ -7,10 +7,12 @@ import { useDemoState } from '../context/DemoStateContext';
 import { useNFC } from '../hooks/useNFC';
 import { DemoHeader, HealthCircle, DemoButton } from '../components';
 
+const RANDOM_SYNC_FALLBACK_ENABLED = process.env.EXPO_PUBLIC_RANDOM_SYNC_FALLBACK === '1';
+
 export function DemoHomeScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
-  const { state, selectedCar, selectCarByNFCTag, isInitialized, pendingNotifications, readCondition, resetToUninitialized, setUserName } = useDemoState();
+  const { state, cars, selectedCar, selectCar, selectCarByNFCTag, isInitialized, pendingNotifications, readCondition, resetToUninitialized, setUserName } = useDemoState();
   const { readTag, status: nfcStatus, error: nfcError } = useNFC();
   const [syncLoading, setSyncLoading] = useState(false);
   const [nameModalVisible, setNameModalVisible] = useState(!state.userName);
@@ -49,6 +51,13 @@ export function DemoHomeScreen() {
     setSyncLoading(true);
     
     try {
+      if (RANDOM_SYNC_FALLBACK_ENABLED) {
+        const randomCar = cars[Math.floor(Math.random() * cars.length)];
+        selectCar(randomCar.id);
+        Alert.alert('Random Car Loaded', `Selected ${randomCar.name} for testing.`, [{ text: 'OK' }]);
+        return;
+      }
+
       const tagContent = await readTag();
       
       if (tagContent) {
@@ -178,8 +187,9 @@ export function DemoHomeScreen() {
           
           {/* NFC hint */}
           <Text style={styles.hintText}>
-            Place your phone near the NFC tag{'\n'}
-            (Tag 1 = Ibiza, Tag 2 = Formentor, Tag 3 = Leon)
+            {RANDOM_SYNC_FALLBACK_ENABLED
+              ? 'Random sync fallback is enabled from the terminal.\nTap to load a random car profile.'
+              : `Place your phone near the NFC tag\n(Tag 1 = Ibiza, Tag 2 = Formentor, Tag 3 = Leon, Tag 4 = Born)`}
           </Text>
         </ScrollView>
       </View>
