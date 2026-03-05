@@ -11,7 +11,7 @@ const SCAN_TIMEOUT = 15000;
 // Change this value to write different messages to tags
 // Valid values for Race mode: "1", "2", "3"
 // ============================================
-const NFC_WRITE_MESSAGE = '1';
+const NFC_WRITE_MESSAGE = '3';
 
 // Retry settings for write operations
 const WRITE_RETRY_COUNT = 2;
